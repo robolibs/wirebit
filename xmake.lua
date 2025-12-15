@@ -105,6 +105,11 @@ package("agisostack")
         table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "Release"))
         import("package.tools.cmake").install(package, configs)
     end)
+
+    on_load(function (package)
+        -- Ensure proper link order: Isobus, HardwareIntegration, Utility
+        package:add("links", "Isobus", "HardwareIntegration", "Utility")
+    end)
 package_end()
 
 -- Add required packages
@@ -147,6 +152,7 @@ if has_config("examples") and os.projectdir() == os.curdir() then
             add_files(filepath)
             add_deps("isobus")
             add_packages("concord", "agisostack")
+            add_links("Isobus", "HardwareIntegration", "Utility")
             add_syslinks("pthread")
             add_includedirs("include")
         target_end()
