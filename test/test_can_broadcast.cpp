@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
         echo::info("[Hub] Starting...").green();
 
         // Convert arguments to strings
-        char num_nodes_str[16], drop_prob_str[32];
+        char num_nodes_str[32], drop_prob_str[32];
         snprintf(num_nodes_str, sizeof(num_nodes_str), "%zu", num_nodes);
         snprintf(drop_prob_str, sizeof(drop_prob_str), "%.6f", drop_prob);
 

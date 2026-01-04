@@ -22,6 +22,13 @@
 #include <wirebit/eth/eth_endpoint.hpp>
 #include <wirebit/serial/serial_endpoint.hpp>
 
+// Hardware interface links (requires HAS_HARDWARE compile flag)
+#ifdef HAS_HARDWARE
+#include <wirebit/can/socketcan_link.hpp>
+#include <wirebit/eth/tap_link.hpp>
+#include <wirebit/serial/pty_link.hpp>
+#endif // HAS_HARDWARE
+
 namespace wirebit {
 
     // Library version

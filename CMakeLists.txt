@@ -96,6 +96,7 @@ else()
 endif()
 option(${PROJECT_NAME_UPPER}_BUILD_EXAMPLES "Build examples" OFF)
 option(${PROJECT_NAME_UPPER}_ENABLE_TESTS "Enable tests" OFF)
+option(${PROJECT_NAME_UPPER}_HARDWARE "Enable hardware interface links (PTY, SocketCAN, TAP)" OFF)
 option(SHORT_NAMESPACE "Enable short namespace alias" ON)
 option(EXPOSE_ALL "Expose all submodule functions in namespace" OFF)
 
@@ -176,6 +177,11 @@ endif()
 
 if(LIB_DEP_TARGETS)
     target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_DEP_TARGETS})
+endif()
+
+if(${PROJECT_NAME_UPPER}_HARDWARE)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC HAS_HARDWARE)
+    message(STATUS "Hardware interface links enabled (PTY, SocketCAN, TAP)")
 endif()
 
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})

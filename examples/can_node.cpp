@@ -125,7 +125,7 @@ int mode_recv(int node_id, int timeout_ms = 5000) {
     while (true) {
         // Check timeout
         uint64_t elapsed_ms = (now_ns() - start_time) / 1000000;
-        if (elapsed_ms > timeout_ms) {
+        if (elapsed_ms > static_cast<uint64_t>(timeout_ms)) {
             echo::warn("Timeout reached").yellow();
             break;
         }
