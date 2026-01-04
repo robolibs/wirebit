@@ -5,38 +5,48 @@
 TEST_CASE("Frame creation and serialization") {
     SUBCASE("Create frame with payload") {
         wirebit::Bytes payload = {1, 2, 3, 4, 5};
-        wirebit::Frame frame(wirebit::FrameType::SERIAL, payload);
+        wirebit::Frame frame = wirebit::make_frame(wirebit::FrameType::SERIAL, payload);
 
-        CHECK(frame.header.frame_type == wirebit::FrameType::SERIAL);
-        CHECK(frame.header.payload_len == 5);
-        CHECK(frame.payload.size() == 5);
-        CHECK(frame.is_valid());
+        CHECK(frame.value.frame_type == wirebit::FrameType::SERIAL);
+        CHECK(frame.value.payload.size() == 5);
+        CHECK(frame.timestamp > 0); // Should have a valid timestamp
     }
 
     SUBCASE("Serialize and deserialize frame") {
         wirebit::Bytes payload = {0xDE, 0xAD, 0xBE, 0xEF};
-        wirebit::Frame original(wirebit::FrameType::CAN, payload);
+        wirebit::Frame original = wirebit::make_frame(wirebit::FrameType::CAN, payload, wirebit::FrameId(42));
 
         auto serialized = wirebit::serialize_frame(original);
-        CHECK(serialized.size() == sizeof(wirebit::FrameHeader) + 4);
+        CHECK(serialized.size() > 0);
 
         auto result = wirebit::deserialize_frame(serialized);
         REQUIRE(result.is_ok());
 
         auto &deserialized = result.value();
-        CHECK(deserialized.header.frame_type == wirebit::FrameType::CAN);
-        CHECK(deserialized.header.payload_len == 4);
-        CHECK(deserialized.payload.size() == 4);
-        CHECK(deserialized.payload[0] == 0xDE);
-        CHECK(deserialized.payload[1] == 0xAD);
-        CHECK(deserialized.payload[2] == 0xBE);
-        CHECK(deserialized.payload[3] == 0xEF);
+        CHECK(deserialized.value.frame_type == wirebit::FrameType::CAN);
+        CHECK(deserialized.value.frame_id == 42);
+        CHECK(deserialized.value.payload.size() == 4);
+        CHECK(deserialized.value.payload[0] == 0xDE);
+        CHECK(deserialized.value.payload[1] == 0xAD);
+        CHECK(deserialized.value.payload[2] == 0xBE);
+        CHECK(deserialized.value.payload[3] == 0xEF);
+        CHECK(deserialized.timestamp == original.timestamp); // Timestamp preserved
     }
 
     SUBCASE("Deserialize invalid data") {
-        wirebit::Bytes invalid_data = {1, 2, 3}; // Too small for header
+        wirebit::Bytes invalid_data = {1, 2, 3}; // Too small
         auto result = wirebit::deserialize_frame(invalid_data);
         CHECK(result.is_err());
+    }
+
+    SUBCASE("Frame with explicit timestamp") {
+        wirebit::Bytes payload = {1, 2, 3};
+        wirebit::TimeNs custom_ts = 123456789;
+        wirebit::Frame frame = wirebit::make_frame(wirebit::FrameType::ETH, payload, custom_ts, wirebit::FrameId(99));
+
+        CHECK(frame.timestamp == custom_ts);
+        CHECK(frame.value.frame_id == 99);
+        CHECK(frame.value.frame_type == wirebit::FrameType::ETH);
     }
 }
 
@@ -57,6 +67,13 @@ TEST_CASE("Time utilities") {
         auto t1 = wirebit::now_ns();
         auto t2 = wirebit::now_ns();
         CHECK(t2 >= t1); // Time should be monotonic
+    }
+
+    SUBCASE("datapod::Stamp::now() integration") {
+        auto t1 = wirebit::now_ns();
+        auto t2 = datapod::Stamp<int>::now();
+        // Should be very close (within 1ms)
+        CHECK(std::abs(t2 - t1) < 1000000);
     }
 }
 

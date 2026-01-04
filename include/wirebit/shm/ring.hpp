@@ -8,7 +8,7 @@ namespace wirebit {
 
     /// Wrapper around datapod::RingBuffer for frame encoding/decoding
     /// This class provides frame-level operations on top of the byte-level SPSC ring buffer
-    /// Frame format: [u32 record_len][FrameHeader][payload][padding to 8B alignment]
+    /// Frame format: [u32 record_len][serialized frame][padding to 8B alignment]
     class FrameRing {
       public:
         /// Create a new frame ring with specified capacity
@@ -50,15 +50,15 @@ namespace wirebit {
         }
 
         /// Push a frame into the ring buffer
-        /// Frame format: [u32 record_len][FrameHeader][payload][padding to 8B alignment]
+        /// Frame format: [u32 record_len][serialized frame][padding to 8B alignment]
         /// @param frame Frame to push
         /// @return Result indicating success or error
         Result<Unit, Error> push_frame(const Frame &frame) {
-            echo::trace("FrameRing::push_frame: payload_size=", frame.payload.size());
+            echo::trace("FrameRing::push_frame: payload_size=", frame.value.payload.size());
 
-            // Calculate total record size (header + payload + padding)
-            size_t payload_size = frame.payload.size();
-            size_t record_size = sizeof(uint32_t) + sizeof(FrameHeader) + payload_size;
+            // Serialize the frame first
+            Bytes serialized = serialize_frame(frame);
+            size_t record_size = sizeof(uint32_t) + serialized.size();
             size_t aligned_size = (record_size + 7) & ~7; // Align to 8 bytes
             size_t padding = aligned_size - record_size;
 
@@ -72,9 +72,9 @@ namespace wirebit {
             }
 
             // Check if ring is >80% full
-            float usage = static_cast<float>(size()) / static_cast<float>(capacity());
-            if (usage > 0.8f) {
-                echo::warn("FrameRing usage: ", static_cast<int>(usage * 100), "%").yellow();
+            float usage_pct = static_cast<float>(size()) / static_cast<float>(capacity());
+            if (usage_pct > 0.8f) {
+                echo::warn("FrameRing usage: ", static_cast<int>(usage_pct * 100), "%").yellow();
             }
 
             // Write record length
@@ -84,20 +84,11 @@ namespace wirebit {
                 return result;
             }
 
-            // Write frame header
-            result = push_bytes(reinterpret_cast<const Byte *>(&frame.header), sizeof(FrameHeader));
+            // Write serialized frame
+            result = push_bytes(serialized.data(), serialized.size());
             if (!result.is_ok()) {
-                echo::error("Failed to push frame header").red();
+                echo::error("Failed to push frame data").red();
                 return result;
-            }
-
-            // Write payload
-            if (!frame.payload.empty()) {
-                result = push_bytes(frame.payload.data(), frame.payload.size());
-                if (!result.is_ok()) {
-                    echo::error("Failed to push frame payload").red();
-                    return result;
-                }
             }
 
             // Write padding
@@ -138,29 +129,18 @@ namespace wirebit {
                 return Result<Frame, Error>::err(Error::invalid_argument("Record too large"));
             }
 
-            // Read frame header
-            Frame frame;
-            result = pop_bytes(reinterpret_cast<Byte *>(&frame.header), sizeof(FrameHeader));
+            // Read serialized frame data
+            size_t frame_data_size = record_len - sizeof(uint32_t);
+            Bytes frame_data(frame_data_size);
+            result = pop_bytes(frame_data.data(), frame_data_size);
             if (!result.is_ok()) {
-                echo::error("Failed to pop frame header").red();
+                echo::error("Failed to pop frame data").red();
                 return Result<Frame, Error>::err(result.error());
             }
 
-            // Read payload
-            size_t payload_len = frame.header.payload_len;
-            if (payload_len > 0) {
-                frame.payload.resize(payload_len);
-                result = pop_bytes(frame.payload.data(), payload_len);
-                if (!result.is_ok()) {
-                    echo::error("Failed to pop frame payload").red();
-                    return Result<Frame, Error>::err(result.error());
-                }
-            }
-
             // Calculate and skip padding
-            size_t record_size = sizeof(uint32_t) + sizeof(FrameHeader) + payload_len;
-            size_t aligned_size = (record_size + 7) & ~7;
-            size_t padding = aligned_size - record_size;
+            size_t aligned_size = (record_len + 7) & ~7;
+            size_t padding = aligned_size - record_len;
 
             for (size_t i = 0; i < padding; ++i) {
                 auto pad_result = ring_.pop();
@@ -170,14 +150,15 @@ namespace wirebit {
                 }
             }
 
-            // Validate frame
-            if (!frame.is_valid()) {
-                echo::error("Invalid frame: payload_len mismatch").red();
-                return Result<Frame, Error>::err(Error::invalid_argument("Invalid frame"));
+            // Deserialize frame
+            auto frame_result = deserialize_frame(frame_data);
+            if (!frame_result.is_ok()) {
+                echo::error("Failed to deserialize frame").red();
+                return frame_result;
             }
 
-            echo::trace("FrameRing::pop_frame complete: payload_size=", frame.payload.size());
-            return Result<Frame, Error>::ok(std::move(frame));
+            echo::trace("FrameRing::pop_frame complete: payload_size=", frame_result.value().value.payload.size());
+            return frame_result;
         }
 
         /// Check if ring buffer is empty

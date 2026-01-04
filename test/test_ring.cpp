@@ -23,7 +23,7 @@ TEST_CASE("FrameRing basic operations") {
 
         // Create a frame
         wirebit::Bytes payload = {1, 2, 3, 4, 5};
-        wirebit::Frame frame(wirebit::FrameType::SERIAL, payload, 12345, 100);
+        wirebit::Frame frame = wirebit::make_frame(wirebit::FrameType::SERIAL, payload, 12345, 100);
 
         // Push frame
         auto push_result = ring.push_frame(frame);
@@ -35,13 +35,13 @@ TEST_CASE("FrameRing basic operations") {
         REQUIRE(pop_result.is_ok());
 
         auto popped = std::move(pop_result.value());
-        CHECK(popped.header.frame_type == wirebit::FrameType::SERIAL);
-        CHECK(popped.header.payload_len == 5);
-        CHECK(popped.header.timestamp == 12345);
-        CHECK(popped.header.frame_id == 100);
-        CHECK(popped.payload.size() == 5);
-        CHECK(popped.payload[0] == 1);
-        CHECK(popped.payload[4] == 5);
+        CHECK(popped.value.frame_type == wirebit::FrameType::SERIAL);
+        CHECK(popped.value.payload.size() == 5);
+        CHECK(popped.timestamp == 12345);
+        CHECK(popped.value.frame_id == 100);
+        CHECK(popped.value.payload.size() == 5);
+        CHECK(popped.value.payload[0] == 1);
+        CHECK(popped.value.payload[4] == 5);
         CHECK(ring.empty());
     }
 
@@ -54,7 +54,7 @@ TEST_CASE("FrameRing basic operations") {
         for (int i = 0; i < 10; ++i) {
             wirebit::Bytes payload = {static_cast<wirebit::Byte>(i), static_cast<wirebit::Byte>(i + 1),
                                       static_cast<wirebit::Byte>(i + 2)};
-            wirebit::Frame frame(wirebit::FrameType::CAN, payload, i * 1000, i);
+            wirebit::Frame frame = wirebit::make_frame(wirebit::FrameType::CAN, payload, i * 1000, i);
             auto result = ring.push_frame(frame);
             REQUIRE(result.is_ok());
         }
@@ -67,11 +67,11 @@ TEST_CASE("FrameRing basic operations") {
             REQUIRE(result.is_ok());
 
             auto frame = std::move(result.value());
-            CHECK(frame.header.frame_type == wirebit::FrameType::CAN);
-            CHECK(frame.header.payload_len == 3);
-            CHECK(frame.header.timestamp == static_cast<wirebit::TimeNs>(i * 1000));
-            CHECK(frame.header.frame_id == static_cast<wirebit::FrameId>(i));
-            CHECK(frame.payload[0] == static_cast<wirebit::Byte>(i));
+            CHECK(frame.value.frame_type == wirebit::FrameType::CAN);
+            CHECK(frame.value.payload.size() == 3);
+            CHECK(frame.timestamp == static_cast<wirebit::TimeNs>(i * 1000));
+            CHECK(frame.value.frame_id == static_cast<wirebit::FrameId>(i));
+            CHECK(frame.value.payload[0] == static_cast<wirebit::Byte>(i));
         }
 
         CHECK(ring.empty());
@@ -82,7 +82,7 @@ TEST_CASE("FrameRing basic operations") {
         REQUIRE(ring_result.is_ok());
         auto ring = std::move(ring_result.value());
 
-        wirebit::Frame frame(wirebit::FrameType::ETH, wirebit::Bytes{});
+        wirebit::Frame frame = wirebit::make_frame(wirebit::FrameType::ETH, wirebit::Bytes{});
         auto push_result = ring.push_frame(frame);
         REQUIRE(push_result.is_ok());
 
@@ -90,9 +90,9 @@ TEST_CASE("FrameRing basic operations") {
         REQUIRE(pop_result.is_ok());
 
         auto popped = std::move(pop_result.value());
-        CHECK(popped.header.frame_type == wirebit::FrameType::ETH);
-        CHECK(popped.header.payload_len == 0);
-        CHECK(popped.payload.empty());
+        CHECK(popped.value.frame_type == wirebit::FrameType::ETH);
+        CHECK(popped.value.payload.size() == 0);
+        CHECK(popped.value.payload.empty());
     }
 
     SUBCASE("Large frame") {
@@ -106,7 +106,7 @@ TEST_CASE("FrameRing basic operations") {
             payload[i] = static_cast<wirebit::Byte>(i % 256);
         }
 
-        wirebit::Frame frame(wirebit::FrameType::SERIAL, payload);
+        wirebit::Frame frame = wirebit::make_frame(wirebit::FrameType::SERIAL, payload);
         auto push_result = ring.push_frame(frame);
         REQUIRE(push_result.is_ok());
 
@@ -114,9 +114,9 @@ TEST_CASE("FrameRing basic operations") {
         REQUIRE(pop_result.is_ok());
 
         auto popped = std::move(pop_result.value());
-        CHECK(popped.payload.size() == 1000);
-        for (size_t i = 0; i < popped.payload.size(); ++i) {
-            CHECK(popped.payload[i] == static_cast<wirebit::Byte>(i % 256));
+        CHECK(popped.value.payload.size() == 1000);
+        for (size_t i = 0; i < popped.value.payload.size(); ++i) {
+            CHECK(popped.value.payload[i] == static_cast<wirebit::Byte>(i % 256));
         }
     }
 
@@ -129,7 +129,7 @@ TEST_CASE("FrameRing basic operations") {
         int count = 0;
         while (true) {
             wirebit::Bytes payload = {1, 2, 3};
-            wirebit::Frame frame(wirebit::FrameType::SERIAL, payload);
+            wirebit::Frame frame = wirebit::make_frame(wirebit::FrameType::SERIAL, payload);
             auto result = ring.push_frame(frame);
             if (!result.is_ok()) {
                 break;
@@ -145,7 +145,7 @@ TEST_CASE("FrameRing basic operations") {
         REQUIRE(pop_result.is_ok());
 
         // Should be able to push one more
-        wirebit::Frame frame(wirebit::FrameType::SERIAL, wirebit::Bytes{1, 2, 3});
+        wirebit::Frame frame = wirebit::make_frame(wirebit::FrameType::SERIAL, wirebit::Bytes{1, 2, 3});
         auto push_result = ring.push_frame(frame);
         CHECK(push_result.is_ok());
     }
@@ -175,7 +175,7 @@ TEST_CASE("FrameRing shared memory") {
 
         // Push a frame
         wirebit::Bytes payload = {0xDE, 0xAD, 0xBE, 0xEF};
-        wirebit::Frame frame(wirebit::FrameType::CAN, payload, 99999, 42);
+        wirebit::Frame frame = wirebit::make_frame(wirebit::FrameType::CAN, payload, 99999, 42);
         auto push_result = ring.push_frame(frame);
         REQUIRE(push_result.is_ok());
 
@@ -184,12 +184,12 @@ TEST_CASE("FrameRing shared memory") {
         REQUIRE(pop_result.is_ok());
 
         auto popped = std::move(pop_result.value());
-        CHECK(popped.header.frame_type == wirebit::FrameType::CAN);
-        CHECK(popped.header.timestamp == 99999);
-        CHECK(popped.header.frame_id == 42);
-        CHECK(popped.payload.size() == 4);
-        CHECK(popped.payload[0] == 0xDE);
-        CHECK(popped.payload[3] == 0xEF);
+        CHECK(popped.value.frame_type == wirebit::FrameType::CAN);
+        CHECK(popped.timestamp == 99999);
+        CHECK(popped.value.frame_id == 42);
+        CHECK(popped.value.payload.size() == 4);
+        CHECK(popped.value.payload[0] == 0xDE);
+        CHECK(popped.value.payload[3] == 0xEF);
 
         // Clean up SHM (will be done by destructor, but explicit is fine)
         shm_unlink(shm_name.c_str());
