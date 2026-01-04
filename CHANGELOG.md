@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.3] - 2026-01-04
+
+### <!-- 0 -->⛰️  Features
+
+- Add hardware interface links (PTY, SocketCAN, TAP)
+
 ## [0.0.2] - 2026-01-04
 
 ### <!-- 0 -->⛰️  Features
