@@ -5,9 +5,10 @@
     "clang@latest",
     "clang-tools@latest",
     "stdenv@latest",
-    "boost@latest",
     "arrow-cpp@latest",
-    "fmt@latest"
+    "rerun@latest",
+    "zig@latest",
+    "xmake@latest"
   ],
   "shell": {
     "init_hook": [
