@@ -10,7 +10,7 @@ local PROJECT_VERSION = "0.0.1"
 --   System: "pkgconfig::libname" or {system = "boost"}
 local LIB_DEPS = {
     {"echo", "https://github.com/bresilla/echo.git", "main"},
-    {"datapod", "https://github.com/robolibs/datapod.git", "0.0.23"},
+    {"datapod", "https://github.com/robolibs/datapod.git", "0.0.25"},
     {"optinum", "https://github.com/robolibs/optinum.git", "0.0.15"},
     {"graphix", "https://github.com/robolibs/graphix.git", "0.0.5"},
 }
@@ -170,10 +170,10 @@ end
 -- Main library
 target(PROJECT_NAME)
     set_kind("static")
-    add_files("src/" .. PROJECT_NAME .. "/**.cpp")
-    add_headerfiles("include/(" .. PROJECT_NAME .. "/**.hpp)")
+    add_files("src/**.cpp")
+    add_headerfiles("include/**.hpp)")
     add_includedirs("include", {public = true})
-    add_installfiles("include/(" .. PROJECT_NAME .. "/**.hpp)")
+    add_installfiles("include/**.hpp)")
 
     for _, dep in ipairs(LIB_DEP_NAMES) do add_packages(dep) end
 

@@ -1,14 +1,18 @@
 # RingBuffer SHM Ownership Bug in datapod
 
+## Status: ✅ FIXED
+
+The bug has been fixed in datapod. This document is kept for reference.
+
 ## Summary
 
-There is a critical bug in `datapod::RingBuffer`'s move semantics that prevents shared memory (SHM) segments from persisting correctly. The move constructor and move assignment operator fail to transfer ownership flags, causing premature `shm_unlink()` calls that delete SHM segments before other processes can attach to them.
+There was a critical bug in `datapod::RingBuffer`'s move semantics that prevented shared memory (SHM) segments from persisting correctly. The move constructor and move assignment operator failed to transfer ownership flags, which could cause issues with SHM lifecycle management.
 
-## Impact
+## Impact (Before Fix)
 
-- **All ShmLink tests fail** - Clients cannot attach to SHM segments created by servers
+- **ShmLink tests failed** - Clients could not attach to SHM segments created by servers
 - **Error:** "Shared memory not found" when calling `attach_shm()`
-- **Affects:** Any multi-process communication using `RingBuffer::create_shm()` and `RingBuffer::attach_shm()`
+- **Affected:** Any multi-process communication using `RingBuffer::create_shm()` and `RingBuffer::attach_shm()`
 
 ## Root Cause
 
