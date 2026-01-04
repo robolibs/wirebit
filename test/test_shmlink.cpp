@@ -327,7 +327,7 @@ TEST_CASE("ShmLink ring usage") {
 
 TEST_CASE("ShmLink model enable/disable") {
     SUBCASE("Enable and disable model") {
-        const char *link_name = "test_link_model_toggle";
+        const char *link_name = "test_model_toggle";
 
         auto server_result = wirebit::ShmLink::create(wirebit::String(link_name), 4096);
         REQUIRE(server_result.is_ok());
