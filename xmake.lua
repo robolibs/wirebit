@@ -10,7 +10,7 @@ local PROJECT_VERSION = "0.0.1"
 --   System: "pkgconfig::libname" or {system = "boost"}
 local LIB_DEPS = {
     {"echo", "https://github.com/bresilla/echo.git", "main"},
-    {"datapod", "https://github.com/robolibs/datapod.git", "0.0.22"},
+    {"datapod", "https://github.com/robolibs/datapod.git", "0.0.23"},
     {"optinum", "https://github.com/robolibs/optinum.git", "0.0.15"},
     {"graphix", "https://github.com/robolibs/graphix.git", "0.0.5"},
 }

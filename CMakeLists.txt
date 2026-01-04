@@ -12,7 +12,7 @@ set(PROJECT_VERSION "0.0.1")
 #   Pkg:    set(LIB_DEPS "pkg::name" ...)  # Uses pkg-config
 set(LIB_DEPS
     "echo|https://github.com/bresilla/echo.git|main"
-    "datapod|https://github.com/robolibs/datapod.git|0.0.22"
+    "datapod|https://github.com/robolibs/datapod.git|0.0.23"
     "optinum|https://github.com/robolibs/optinum.git|0.0.15"
     "graphix|https://github.com/robolibs/graphix.git|0.0.5"
 )
