@@ -2,6 +2,7 @@
 
 #include <echo/echo.hpp>
 #include <memory>
+#include <optional>
 #include <wirebit/common/types.hpp>
 #include <wirebit/link.hpp>
 #include <wirebit/model.hpp>
@@ -47,21 +48,39 @@ namespace wirebit {
             String tx_name = String("/") + name + "_tx";
             String rx_name = String("/") + name + "_rx";
 
-            auto tx_result = FrameRing::create_shm(tx_name, capacity_bytes);
-            if (!tx_result.is_ok()) {
+            // Create TX ring
+            auto tx_create_result = FrameRing::create_shm(tx_name, capacity_bytes);
+            if (!tx_create_result.is_ok()) {
                 echo::error("Failed to create TX ring: ", tx_name).red();
-                return Result<ShmLink, Error>::err(tx_result.error());
+                return Result<ShmLink, Error>::err(tx_create_result.error());
             }
 
-            auto rx_result = FrameRing::create_shm(rx_name, capacity_bytes);
-            if (!rx_result.is_ok()) {
+            // Create RX ring
+            auto rx_create_result = FrameRing::create_shm(rx_name, capacity_bytes);
+            if (!rx_create_result.is_ok()) {
                 echo::error("Failed to create RX ring: ", rx_name).red();
-                return Result<ShmLink, Error>::err(rx_result.error());
+                return Result<ShmLink, Error>::err(rx_create_result.error());
+            }
+
+            // Attach to the rings we just created to get non-owning handles
+            // This prevents the SHM from being unlinked when the create results are destroyed
+            auto tx_attach_result = FrameRing::attach_shm(tx_name);
+            if (!tx_attach_result.is_ok()) {
+                echo::error("Failed to attach to TX ring: ", tx_name).red();
+                return Result<ShmLink, Error>::err(tx_attach_result.error());
+            }
+
+            auto rx_attach_result = FrameRing::attach_shm(rx_name);
+            if (!rx_attach_result.is_ok()) {
+                echo::error("Failed to attach to RX ring: ", rx_name).red();
+                return Result<ShmLink, Error>::err(rx_attach_result.error());
             }
 
             echo::debug("ShmLink created successfully: ", name).green();
 
-            ShmLink link(name, std::move(tx_result.value()), std::move(rx_result.value()));
+            // Use the attached (non-owning) rings
+            ShmLink link(name, std::move(tx_attach_result.value()), std::move(rx_attach_result.value()),
+                         std::move(tx_create_result.value()), std::move(rx_create_result.value()));
 
             // Set link model if provided
             if (model != nullptr) {
@@ -248,6 +267,11 @@ namespace wirebit {
         FrameRing tx_ring_; ///< Transmit ring (this -> other)
         FrameRing rx_ring_; ///< Receive ring (other -> this)
 
+        // Keeper rings to prevent SHM from being unlinked (only used by creator)
+        std::optional<FrameRing> tx_keeper_;
+        std::optional<FrameRing> rx_keeper_;
+        bool is_creator_ = false;
+
         // Link simulation
         bool has_model_ = false;
         LinkModel model_;
@@ -257,8 +281,14 @@ namespace wirebit {
         // Statistics
         ShmLinkStats stats_;
 
+        // Constructor for non-creator (client)
         ShmLink(const String &name, FrameRing &&tx, FrameRing &&rx)
-            : name_(name), tx_ring_(std::move(tx)), rx_ring_(std::move(rx)), rng_(0) {}
+            : name_(name), tx_ring_(std::move(tx)), rx_ring_(std::move(rx)), is_creator_(false), rng_(0) {}
+
+        // Constructor for creator (server) with keeper rings
+        ShmLink(const String &name, FrameRing &&tx, FrameRing &&rx, FrameRing &&tx_keeper, FrameRing &&rx_keeper)
+            : name_(name), tx_ring_(std::move(tx)), rx_ring_(std::move(rx)), tx_keeper_(std::move(tx_keeper)),
+              rx_keeper_(std::move(rx_keeper)), is_creator_(true), rng_(0) {}
     };
 
 } // namespace wirebit
