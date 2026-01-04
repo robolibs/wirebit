@@ -66,7 +66,7 @@ class CanBusHub {
         // Create ShmLinks for each node
         for (size_t i = 0; i < num_nodes_; ++i) {
             String node_name("can_node_");
-            char buf[16];
+            char buf[32];
             snprintf(buf, sizeof(buf), "%zu", i);
             node_name = node_name + String(buf);
 

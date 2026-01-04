@@ -64,7 +64,7 @@ namespace wirebit {
     /// Helper function to parse MAC address from string
     inline Result<MacAddr, Error> string_to_mac(const String &str) {
         MacAddr mac;
-        int values[ETH_ALEN];
+        unsigned int values[ETH_ALEN];
         int count = std::sscanf(str.c_str(), "%x:%x:%x:%x:%x:%x", &values[0], &values[1], &values[2], &values[3],
                                 &values[4], &values[5]);
 

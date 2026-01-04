@@ -50,6 +50,15 @@ ifndef BUILD_SYSTEM
 endif
 
 # ==================================================================================================
+# Hardware interface links: HARDWARE=1 (optional)
+# ==================================================================================================
+HARDWARE ?=
+ifdef HARDWARE
+    CMAKE_HARDWARE_FLAG := -D$(PROJECT_CAP)_HARDWARE=ON
+    XMAKE_HARDWARE_FLAG := --hardware=y
+endif
+
+# ==================================================================================================
 # Build system specific commands (defined as variables)
 # ==================================================================================================
 ifeq ($(BUILD_SYSTEM),zig)
@@ -65,8 +74,8 @@ ifeq ($(BUILD_SYSTEM),zig)
 else ifeq ($(BUILD_SYSTEM),xmake)
     # XMake build system
     CMD_BUILD       := xmake -j$(shell nproc) -y 2>&1 | tee "$(TOP_DIR)/.complog"
-    CMD_CONFIG      := xmake f --examples=y --tests=y $(XMAKE_COMPILER_FLAG) -y 2>&1 | tee "$(TOP_DIR)/.complog" && xmake project -k compile_commands
-    CMD_RECONFIG    := rm -rf .xmake $(BUILD_DIR) && xmake f --examples=y --tests=y $(XMAKE_COMPILER_FLAG) -c -y 2>&1 | tee "$(TOP_DIR)/.complog" && xmake project -k compile_commands
+    CMD_CONFIG      := xmake f --examples=y --tests=y $(XMAKE_COMPILER_FLAG) $(XMAKE_HARDWARE_FLAG) -y 2>&1 | tee "$(TOP_DIR)/.complog" && xmake project -k compile_commands
+    CMD_RECONFIG    := rm -rf .xmake $(BUILD_DIR) && xmake f --examples=y --tests=y $(XMAKE_COMPILER_FLAG) $(XMAKE_HARDWARE_FLAG) -c -y 2>&1 | tee "$(TOP_DIR)/.complog" && xmake project -k compile_commands
     CMD_CLEAN       := xmake clean -a
     CMD_TEST        := xmake test
     CMD_TEST_SINGLE  = ./build/linux/$$(uname -m)/release/$(TEST)
@@ -75,8 +84,8 @@ else ifeq ($(BUILD_SYSTEM),xmake)
 else
     # CMake build system (default)
     CMD_BUILD       := cd $(BUILD_DIR) && make -j$(shell nproc) 2>&1 | tee "$(TOP_DIR)/.complog"
-    CMD_CONFIG      := mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && if [ -f Makefile ]; then make clean; fi && cmake -Wno-dev $(CMAKE_COMPILER_FLAG) -D$(PROJECT_CAP)_BUILD_EXAMPLES=ON -D$(PROJECT_CAP)_ENABLE_TESTS=ON .. 2>&1 | tee "$(TOP_DIR)/.complog"
-    CMD_RECONFIG    := rm -rf $(BUILD_DIR) && mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -Wno-dev $(CMAKE_COMPILER_FLAG) -D$(PROJECT_CAP)_BUILD_EXAMPLES=ON -D$(PROJECT_CAP)_ENABLE_TESTS=ON .. 2>&1 | tee "$(TOP_DIR)/.complog"
+    CMD_CONFIG      := mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && if [ -f Makefile ]; then make clean; fi && cmake -Wno-dev $(CMAKE_COMPILER_FLAG) $(CMAKE_HARDWARE_FLAG) -D$(PROJECT_CAP)_BUILD_EXAMPLES=ON -D$(PROJECT_CAP)_ENABLE_TESTS=ON .. 2>&1 | tee "$(TOP_DIR)/.complog"
+    CMD_RECONFIG    := rm -rf $(BUILD_DIR) && mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -Wno-dev $(CMAKE_COMPILER_FLAG) $(CMAKE_HARDWARE_FLAG) -D$(PROJECT_CAP)_BUILD_EXAMPLES=ON -D$(PROJECT_CAP)_ENABLE_TESTS=ON .. 2>&1 | tee "$(TOP_DIR)/.complog"
     CMD_CLEAN       := rm -rf $(BUILD_DIR)
     CMD_TEST        := cd $(BUILD_DIR) && ctest --verbose --output-on-failure
     CMD_TEST_SINGLE  = $(BUILD_DIR)/$(TEST)

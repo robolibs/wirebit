@@ -2,7 +2,7 @@
 -- NOTE: Due to xmake description domain limitations, PROJECT_NAME must be hardcoded
 --       and kept in sync with the NAME file. The VERSION is read dynamically.
 local PROJECT_NAME = "wirebit"
-local PROJECT_VERSION = "0.0.2"
+local PROJECT_VERSION = "0.0.3"
 
 -- Dependencies formats:
 --   Git:    {"name", "https://github.com/org/repo.git", "tag"}
@@ -87,6 +87,7 @@ end
 -- Options
 option("examples", {default = false, showmenu = true, description = "Build examples"})
 option("tests",    {default = false, showmenu = true, description = "Enable tests"})
+option("hardware", {default = false, showmenu = true, description = "Enable hardware interface links (PTY, SocketCAN, TAP)"})
 option("short_namespace", {default = false, showmenu = true, description = "Enable short namespace alias"})
 option("expose_all", {default = false, showmenu = true, description = "Expose all submodule functions in optinum:: namespace"})
 
@@ -182,6 +183,9 @@ target(PROJECT_NAME)
     end
     if has_config("expose_all") then
         add_defines("OPTINUM_EXPOSE_ALL", {public = true})
+    end
+    if has_config("hardware") then
+        add_defines("HAS_HARDWARE", {public = true})
     end
 
     on_install(function (target)
