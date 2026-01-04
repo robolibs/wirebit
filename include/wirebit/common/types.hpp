@@ -27,8 +27,8 @@ namespace wirebit {
     using Byte = uint8_t;
     using Bytes = Vector<Byte>;
 
-    // Time type (nanoseconds since epoch)
-    using TimeNs = uint64_t;
+    // Time type (nanoseconds since Unix epoch) - compatible with datapod::Stamp
+    using TimeNs = int64_t;
 
     // Frame ID type
     using FrameId = uint64_t;
