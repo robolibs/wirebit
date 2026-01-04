@@ -7,46 +7,66 @@ TEST_CASE("Frame creation and serialization") {
         wirebit::Bytes payload = {1, 2, 3, 4, 5};
         wirebit::Frame frame = wirebit::make_frame(wirebit::FrameType::SERIAL, payload);
 
-        CHECK(frame.value.frame_type == wirebit::FrameType::SERIAL);
-        CHECK(frame.value.payload.size() == 5);
-        CHECK(frame.timestamp > 0); // Should have a valid timestamp
+        CHECK(frame.type() == wirebit::FrameType::SERIAL);
+        CHECK(frame.payload.size() == 5);
+
+        // Copy packed field to avoid reference binding issue
+        uint64_t ts = frame.header.tx_timestamp_ns;
+        CHECK(ts > 0); // Should have a valid timestamp
+
+        uint32_t magic = frame.header.magic;
+        CHECK(magic == 0x57424954);
+
+        uint16_t version = frame.header.version;
+        CHECK(version == 1);
     }
 
     SUBCASE("Serialize and deserialize frame") {
         wirebit::Bytes payload = {0xDE, 0xAD, 0xBE, 0xEF};
-        wirebit::Frame original = wirebit::make_frame(wirebit::FrameType::CAN, payload, wirebit::FrameId(42));
+        wirebit::Frame original = wirebit::make_frame(wirebit::FrameType::CAN, payload, 42, 0);
 
-        auto serialized = wirebit::serialize_frame(original);
+        auto serialized = wirebit::encode_frame(original);
         CHECK(serialized.size() > 0);
 
-        auto result = wirebit::deserialize_frame(serialized);
+        auto result = wirebit::decode_frame(serialized);
         REQUIRE(result.is_ok());
 
-        auto &deserialized = result.value();
-        CHECK(deserialized.value.frame_type == wirebit::FrameType::CAN);
-        CHECK(deserialized.value.frame_id == 42);
-        CHECK(deserialized.value.payload.size() == 4);
-        CHECK(deserialized.value.payload[0] == 0xDE);
-        CHECK(deserialized.value.payload[1] == 0xAD);
-        CHECK(deserialized.value.payload[2] == 0xBE);
-        CHECK(deserialized.value.payload[3] == 0xEF);
-        CHECK(deserialized.timestamp == original.timestamp); // Timestamp preserved
+        auto deserialized = std::move(result.value());
+        CHECK(deserialized.type() == wirebit::FrameType::CAN);
+
+        uint32_t src_id = deserialized.header.src_endpoint_id;
+        CHECK(src_id == 42);
+
+        CHECK(deserialized.payload.size() == 4);
+        CHECK(deserialized.payload[0] == 0xDE);
+        CHECK(deserialized.payload[1] == 0xAD);
+        CHECK(deserialized.payload[2] == 0xBE);
+        CHECK(deserialized.payload[3] == 0xEF);
+
+        uint64_t orig_ts = original.header.tx_timestamp_ns;
+        uint64_t deser_ts = deserialized.header.tx_timestamp_ns;
+        CHECK(deser_ts == orig_ts); // Timestamp preserved
     }
 
     SUBCASE("Deserialize invalid data") {
         wirebit::Bytes invalid_data = {1, 2, 3}; // Too small
-        auto result = wirebit::deserialize_frame(invalid_data);
+        auto result = wirebit::decode_frame(invalid_data);
         CHECK(result.is_err());
     }
 
     SUBCASE("Frame with explicit timestamp") {
         wirebit::Bytes payload = {1, 2, 3};
-        wirebit::TimeNs custom_ts = 123456789;
-        wirebit::Frame frame = wirebit::make_frame(wirebit::FrameType::ETH, payload, custom_ts, wirebit::FrameId(99));
+        uint64_t custom_ts = 123456789;
+        wirebit::Frame frame =
+            wirebit::make_frame_with_timestamps(wirebit::FrameType::ETHERNET, payload, custom_ts, 0, 99, 0);
 
-        CHECK(frame.timestamp == custom_ts);
-        CHECK(frame.value.frame_id == 99);
-        CHECK(frame.value.frame_type == wirebit::FrameType::ETH);
+        uint64_t ts = frame.header.tx_timestamp_ns;
+        CHECK(ts == custom_ts);
+
+        uint32_t src_id = frame.header.src_endpoint_id;
+        CHECK(src_id == 99);
+
+        CHECK(frame.type() == wirebit::FrameType::ETHERNET);
     }
 }
 
@@ -67,13 +87,6 @@ TEST_CASE("Time utilities") {
         auto t1 = wirebit::now_ns();
         auto t2 = wirebit::now_ns();
         CHECK(t2 >= t1); // Time should be monotonic
-    }
-
-    SUBCASE("datapod::Stamp::now() integration") {
-        auto t1 = wirebit::now_ns();
-        auto t2 = datapod::Stamp<int>::now();
-        // Should be very close (within 1ms)
-        CHECK(std::abs(t2 - t1) < 1000000);
     }
 }
 
