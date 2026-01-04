@@ -1,132 +1,219 @@
 #pragma once
 
-#include <datapod/temporal/stamp.hpp>
+#include <cstring>
+#include <echo/echo.hpp>
+#include <wirebit/common/time.hpp>
 #include <wirebit/common/types.hpp>
 
 namespace wirebit {
 
     /// Frame type enumeration
-    enum class FrameType : uint8_t {
-        SERIAL = 0, ///< Serial data frame
-        CAN = 1,    ///< CAN bus frame
-        ETH = 2,    ///< Ethernet frame
+    enum class FrameType : uint16_t {
+        SERIAL = 1,   ///< Serial data frame
+        CAN = 2,      ///< CAN bus frame
+        ETHERNET = 3, ///< Ethernet frame
     };
 
-    /// Frame data structure (the value part of Stamp<FrameData>)
-    struct FrameData {
-        FrameType frame_type; ///< Type of frame
-        FrameId frame_id;     ///< Unique frame identifier
-        Bytes payload;        ///< Frame payload data
+    /// Frame header structure (packed for stable wire format)
+    struct FrameHeader {
+        uint32_t magic = 0x57424954; ///< Magic number 'WBIT'
+        uint16_t version = 1;        ///< Protocol version
+        uint16_t frame_type;         ///< FrameType enum value
+        uint32_t flags = 0;          ///< Frame flags (reserved)
+        uint64_t tx_timestamp_ns;    ///< Transmission timestamp (nanoseconds)
+        uint64_t deliver_at_ns;      ///< Delivery timestamp for simulation (0 = immediate)
+        uint32_t src_endpoint_id;    ///< Source endpoint ID
+        uint32_t dst_endpoint_id;    ///< Destination endpoint ID (0 = broadcast)
+        uint32_t payload_len;        ///< Payload length in bytes
+        uint32_t meta_len;           ///< Metadata length in bytes
 
-        FrameData() : frame_type(FrameType::SERIAL), frame_id(0), payload() {}
+        FrameHeader()
+            : magic(0x57424954), version(1), frame_type(0), flags(0), tx_timestamp_ns(0), deliver_at_ns(0),
+              src_endpoint_id(0), dst_endpoint_id(0), payload_len(0), meta_len(0) {}
+    } __attribute__((packed));
 
-        FrameData(FrameType type, FrameId id, const Bytes &data) : frame_type(type), frame_id(id), payload(data) {}
+    static_assert(sizeof(FrameHeader) == 44, "FrameHeader must be 44 bytes");
 
-        FrameData(FrameType type, FrameId id, Bytes &&data)
-            : frame_type(type), frame_id(id), payload(std::move(data)) {}
+    /// Frame structure with header, payload, and metadata
+    struct Frame {
+        FrameHeader header; ///< Frame header
+        Bytes payload;      ///< Frame payload data
+        Bytes meta;         ///< Frame metadata (optional)
 
-        /// Get payload size
-        inline size_t size() const { return payload.size(); }
+        Frame() = default;
 
-        /// Check if payload is empty
-        inline bool empty() const { return payload.empty(); }
+        Frame(FrameType type, const Bytes &payload_data, uint32_t src_id = 0, uint32_t dst_id = 0, uint64_t tx_ts = 0,
+              uint64_t deliver_ts = 0)
+            : payload(payload_data) {
+            header.frame_type = static_cast<uint16_t>(type);
+            header.src_endpoint_id = src_id;
+            header.dst_endpoint_id = dst_id;
+            header.tx_timestamp_ns = tx_ts;
+            header.deliver_at_ns = deliver_ts;
+            header.payload_len = static_cast<uint32_t>(payload.size());
+            header.meta_len = 0;
+        }
 
-        /// Reflection support for serialization
-        auto members() { return std::tie(frame_type, frame_id, payload); }
-        auto members() const { return std::tie(frame_type, frame_id, payload); }
+        Frame(FrameType type, Bytes &&payload_data, uint32_t src_id = 0, uint32_t dst_id = 0, uint64_t tx_ts = 0,
+              uint64_t deliver_ts = 0)
+            : payload(std::move(payload_data)) {
+            header.frame_type = static_cast<uint16_t>(type);
+            header.src_endpoint_id = src_id;
+            header.dst_endpoint_id = dst_id;
+            header.tx_timestamp_ns = tx_ts;
+            header.deliver_at_ns = deliver_ts;
+            header.payload_len = static_cast<uint32_t>(payload.size());
+            header.meta_len = 0;
+        }
+
+        /// Get frame type
+        inline FrameType type() const { return static_cast<FrameType>(header.frame_type); }
+
+        /// Get total frame size (header + payload + meta)
+        inline size_t total_size() const { return sizeof(FrameHeader) + header.payload_len + header.meta_len; }
+
+        /// Check if frame is broadcast
+        inline bool is_broadcast() const { return header.dst_endpoint_id == 0; }
+
+        /// Set metadata
+        inline void set_meta(const Bytes &meta_data) {
+            meta = meta_data;
+            header.meta_len = static_cast<uint32_t>(meta.size());
+        }
+
+        /// Set metadata (move)
+        inline void set_meta(Bytes &&meta_data) {
+            meta = std::move(meta_data);
+            header.meta_len = static_cast<uint32_t>(meta.size());
+        }
     };
-
-    /// Frame = timestamped frame data (uses datapod::Stamp)
-    using Frame = datapod::Stamp<FrameData>;
 
     /// Helper: Create a frame with current timestamp
-    inline Frame make_frame(FrameType type, const Bytes &payload, FrameId id = 0) {
-        return Frame{Frame::now(), FrameData{type, id, payload}};
+    inline Frame make_frame(FrameType type, const Bytes &payload, uint32_t src_id = 0, uint32_t dst_id = 0) {
+        uint64_t ts = now_ns();
+        return Frame(type, payload, src_id, dst_id, ts, 0);
     }
 
     /// Helper: Create a frame with current timestamp (move payload)
-    inline Frame make_frame(FrameType type, Bytes &&payload, FrameId id = 0) {
-        return Frame{Frame::now(), FrameData{type, id, std::move(payload)}};
+    inline Frame make_frame(FrameType type, Bytes &&payload, uint32_t src_id = 0, uint32_t dst_id = 0) {
+        uint64_t ts = now_ns();
+        return Frame(type, std::move(payload), src_id, dst_id, ts, 0);
     }
 
-    /// Helper: Create a frame with explicit timestamp
-    inline Frame make_frame(FrameType type, const Bytes &payload, TimeNs timestamp, FrameId id = 0) {
-        return Frame{timestamp, FrameData{type, id, payload}};
+    /// Helper: Create a frame with explicit timestamps
+    inline Frame make_frame_with_timestamps(FrameType type, const Bytes &payload, uint64_t tx_timestamp_ns,
+                                            uint64_t deliver_at_ns = 0, uint32_t src_id = 0, uint32_t dst_id = 0) {
+        return Frame(type, payload, src_id, dst_id, tx_timestamp_ns, deliver_at_ns);
     }
 
-    /// Serialize frame to bytes
-    /// Format: [int64_t timestamp][uint8_t frame_type][uint64_t frame_id][uint32_t payload_len][payload bytes]
-    inline Bytes serialize_frame(const Frame &frame) {
+    /// Encode frame to bytes
+    /// Format: [FrameHeader][payload bytes][meta bytes]
+    inline Bytes encode_frame(const Frame &frame) {
+        echo::trace("Encoding frame: type=", frame.header.frame_type, " payload=", frame.header.payload_len,
+                    " meta=", frame.header.meta_len);
+
         Bytes result;
-        size_t total_size = sizeof(int64_t) +           // timestamp
-                            sizeof(uint8_t) +           // frame_type
-                            sizeof(uint64_t) +          // frame_id
-                            sizeof(uint32_t) +          // payload_len
-                            frame.value.payload.size(); // payload
+        size_t total_size = sizeof(FrameHeader) + frame.payload.size() + frame.meta.size();
         result.reserve(total_size);
 
-        // Serialize timestamp
-        const auto *ts_bytes = reinterpret_cast<const Byte *>(&frame.timestamp);
-        result.insert(result.end(), ts_bytes, ts_bytes + sizeof(int64_t));
+        // Encode header
+        const auto *header_bytes = reinterpret_cast<const Byte *>(&frame.header);
+        result.insert(result.end(), header_bytes, header_bytes + sizeof(FrameHeader));
 
-        // Serialize frame_type
-        result.push_back(static_cast<Byte>(frame.value.frame_type));
+        // Encode payload
+        result.insert(result.end(), frame.payload.begin(), frame.payload.end());
 
-        // Serialize frame_id
-        const auto *id_bytes = reinterpret_cast<const Byte *>(&frame.value.frame_id);
-        result.insert(result.end(), id_bytes, id_bytes + sizeof(uint64_t));
+        // Encode metadata
+        if (!frame.meta.empty()) {
+            result.insert(result.end(), frame.meta.begin(), frame.meta.end());
+        }
 
-        // Serialize payload_len
-        uint32_t payload_len = static_cast<uint32_t>(frame.value.payload.size());
-        const auto *len_bytes = reinterpret_cast<const Byte *>(&payload_len);
-        result.insert(result.end(), len_bytes, len_bytes + sizeof(uint32_t));
-
-        // Serialize payload
-        result.insert(result.end(), frame.value.payload.begin(), frame.value.payload.end());
-
+        echo::trace("Frame encoded: ", result.size(), " bytes");
         return result;
     }
 
-    /// Deserialize frame from bytes
-    inline Result<Frame, Error> deserialize_frame(const Bytes &data) {
-        size_t min_size = sizeof(int64_t) + sizeof(uint8_t) + sizeof(uint64_t) + sizeof(uint32_t);
-        if (data.size() < min_size) {
-            return Result<Frame, Error>::err(Error::invalid_argument("Data too small for frame"));
+    /// Decode frame from bytes
+    inline Result<Frame, Error> decode_frame(const Bytes &data) {
+        echo::trace("Decoding frame, size: ", data.size());
+
+        // Check minimum size
+        if (data.size() < sizeof(FrameHeader)) {
+            echo::error("Frame too small: ", data.size(), " < ", sizeof(FrameHeader)).red();
+            return Result<Frame, Error>::err(Error::invalid_argument("Frame data too small for header"));
         }
 
-        size_t offset = 0;
+        // Decode header
+        Frame frame;
+        std::memcpy(&frame.header, data.data(), sizeof(FrameHeader));
 
-        // Deserialize timestamp
-        int64_t timestamp;
-        std::memcpy(&timestamp, data.data() + offset, sizeof(int64_t));
-        offset += sizeof(int64_t);
-
-        // Deserialize frame_type
-        FrameType frame_type = static_cast<FrameType>(data[offset]);
-        offset += sizeof(uint8_t);
-
-        // Deserialize frame_id
-        FrameId frame_id;
-        std::memcpy(&frame_id, data.data() + offset, sizeof(uint64_t));
-        offset += sizeof(uint64_t);
-
-        // Deserialize payload_len
-        uint32_t payload_len;
-        std::memcpy(&payload_len, data.data() + offset, sizeof(uint32_t));
-        offset += sizeof(uint32_t);
-
-        // Check if we have enough data for payload
-        if (data.size() < offset + payload_len) {
-            return Result<Frame, Error>::err(Error::invalid_argument("Data too small for frame payload"));
+        // Validate magic number
+        if (frame.header.magic != 0x57424954) {
+            echo::error("Invalid frame magic: 0x", std::hex, frame.header.magic).red();
+            return Result<Frame, Error>::err(Error::invalid_argument("Invalid frame magic number"));
         }
 
-        // Deserialize payload
-        Bytes payload(data.begin() + offset, data.begin() + offset + payload_len);
+        // Validate version
+        if (frame.header.version != 1) {
+            echo::error("Unsupported frame version: ", frame.header.version).red();
+            return Result<Frame, Error>::err(Error::invalid_argument("Unsupported frame version"));
+        }
 
-        // Create frame
-        Frame frame{timestamp, FrameData{frame_type, frame_id, std::move(payload)}};
+        // Check total size
+        size_t expected_size = sizeof(FrameHeader) + frame.header.payload_len + frame.header.meta_len;
+        if (data.size() < expected_size) {
+            echo::error("Frame data incomplete: ", data.size(), " < ", expected_size).red();
+            return Result<Frame, Error>::err(Error::invalid_argument("Frame data incomplete"));
+        }
+
+        // Decode payload
+        size_t offset = sizeof(FrameHeader);
+        if (frame.header.payload_len > 0) {
+            frame.payload.assign(data.begin() + offset, data.begin() + offset + frame.header.payload_len);
+            offset += frame.header.payload_len;
+        }
+
+        // Decode metadata
+        if (frame.header.meta_len > 0) {
+            frame.meta.assign(data.begin() + offset, data.begin() + offset + frame.header.meta_len);
+        }
+
+        echo::debug("Frame decoded: type=", frame.header.frame_type, " src=", frame.header.src_endpoint_id,
+                    " dst=", frame.header.dst_endpoint_id, " payload=", frame.header.payload_len,
+                    " meta=", frame.header.meta_len);
 
         return Result<Frame, Error>::ok(std::move(frame));
+    }
+
+    /// Validate frame header (without decoding payload)
+    inline Result<Unit, Error> validate_frame_header(const Bytes &data) {
+        if (data.size() < sizeof(FrameHeader)) {
+            return Result<Unit, Error>::err(Error::invalid_argument("Data too small for frame header"));
+        }
+
+        FrameHeader header;
+        std::memcpy(&header, data.data(), sizeof(FrameHeader));
+
+        if (header.magic != 0x57424954) {
+            return Result<Unit, Error>::err(Error::invalid_argument("Invalid frame magic number"));
+        }
+
+        if (header.version != 1) {
+            return Result<Unit, Error>::err(Error::invalid_argument("Unsupported frame version"));
+        }
+
+        return Result<Unit, Error>::ok(Unit{});
+    }
+
+    /// Get frame type from encoded data (without full decode)
+    inline Result<FrameType, Error> peek_frame_type(const Bytes &data) {
+        if (data.size() < sizeof(FrameHeader)) {
+            return Result<FrameType, Error>::err(Error::invalid_argument("Data too small for frame header"));
+        }
+
+        FrameHeader header;
+        std::memcpy(&header, data.data(), sizeof(FrameHeader));
+
+        return Result<FrameType, Error>::ok(static_cast<FrameType>(header.frame_type));
     }
 
 } // namespace wirebit

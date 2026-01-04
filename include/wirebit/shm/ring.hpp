@@ -54,10 +54,10 @@ namespace wirebit {
         /// @param frame Frame to push
         /// @return Result indicating success or error
         Result<Unit, Error> push_frame(const Frame &frame) {
-            echo::trace("FrameRing::push_frame: payload_size=", frame.value.payload.size());
+            echo::trace("FrameRing::push_frame: payload_size=", frame.payload.size());
 
             // Serialize the frame first
-            Bytes serialized = serialize_frame(frame);
+            Bytes serialized = encode_frame(frame);
             size_t record_size = sizeof(uint32_t) + serialized.size();
             size_t aligned_size = (record_size + 7) & ~7; // Align to 8 bytes
             size_t padding = aligned_size - record_size;
@@ -151,13 +151,13 @@ namespace wirebit {
             }
 
             // Deserialize frame
-            auto frame_result = deserialize_frame(frame_data);
+            auto frame_result = decode_frame(frame_data);
             if (!frame_result.is_ok()) {
                 echo::error("Failed to deserialize frame").red();
                 return frame_result;
             }
 
-            echo::trace("FrameRing::pop_frame complete: payload_size=", frame_result.value().value.payload.size());
+            echo::trace("FrameRing::pop_frame complete: payload_size=", frame_result.value().payload.size());
             return frame_result;
         }
 

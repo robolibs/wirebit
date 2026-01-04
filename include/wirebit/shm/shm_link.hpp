@@ -66,14 +66,16 @@ namespace wirebit {
         }
 
         Result<Unit, Error> send(const Frame &frame) override {
-            echo::trace("ShmLink::send: ", name_, " (frame_id: ", frame.value.frame_id, ")");
+            echo::trace("ShmLink::send: ", name_, " (src: ", frame.header.src_endpoint_id,
+                        ", dst: ", frame.header.dst_endpoint_id, ")");
             return tx_ring_.push_frame(frame);
         }
 
         Result<Frame, Error> recv() override {
             auto result = rx_ring_.pop_frame();
             if (result.is_ok()) {
-                echo::trace("ShmLink::recv: ", name_, " (frame_id: ", result.value().value.frame_id, ")");
+                echo::trace("ShmLink::recv: ", name_, " (src: ", result.value().header.src_endpoint_id,
+                            ", dst: ", result.value().header.dst_endpoint_id, ")");
             }
             return result;
         }
