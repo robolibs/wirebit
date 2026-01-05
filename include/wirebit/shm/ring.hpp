@@ -1,6 +1,6 @@
 #pragma once
 
-#include <datapod/lockfree/ring_buffer.hpp>
+#include <datapod/pods/lockfree/ring_buffer.hpp>
 #include <echo/echo.hpp>
 #include <wirebit/frame.hpp>
 

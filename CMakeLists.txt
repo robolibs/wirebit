@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.15)
 # Project configuration
 # ==================================================================================================
 set(PROJECT_NAME wirebit)
-set(PROJECT_VERSION "0.0.3")
+set(PROJECT_VERSION "0.0.4")
 
 # Dependencies formats:
 #   Git:    set(LIB_DEPS "name|https://github.com/org/repo.git|tag" ...)
@@ -12,9 +12,9 @@ set(PROJECT_VERSION "0.0.3")
 #   Pkg:    set(LIB_DEPS "pkg::name" ...)  # Uses pkg-config
 set(LIB_DEPS
     "echo|https://github.com/bresilla/echo.git|main"
-    "datapod|https://github.com/robolibs/datapod.git|0.0.25"
-    "optinum|https://github.com/robolibs/optinum.git|0.0.15"
-    "graphix|https://github.com/robolibs/graphix.git|0.0.5"
+    "datapod|https://github.com/robolibs/datapod.git|0.0.29"
+    "optinum|https://github.com/robolibs/optinum.git|0.0.16"
+    "graphix|https://github.com/robolibs/graphix.git|0.0.6"
 )
 set(EXAMPLE_DEPS
     "pkg::rerun_sdk"

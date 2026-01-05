@@ -1,6 +1,6 @@
 #pragma once
 
-#include <datapod/temporal/stamp.hpp>
+#include <datapod/pods/temporal/stamp.hpp>
 #include <wirebit/common/types.hpp>
 
 namespace wirebit {

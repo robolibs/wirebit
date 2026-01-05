@@ -2,7 +2,7 @@
 -- NOTE: Due to xmake description domain limitations, PROJECT_NAME must be hardcoded
 --       and kept in sync with the NAME file. The VERSION is read dynamically.
 local PROJECT_NAME = "wirebit"
-local PROJECT_VERSION = "0.0.3"
+local PROJECT_VERSION = "0.0.4"
 
 -- Dependencies formats:
 --   Git:    {"name", "https://github.com/org/repo.git", "tag"}
@@ -10,9 +10,9 @@ local PROJECT_VERSION = "0.0.3"
 --   System: "pkgconfig::libname" or {system = "boost"}
 local LIB_DEPS = {
     {"echo", "https://github.com/bresilla/echo.git", "main"},
-    {"datapod", "https://github.com/robolibs/datapod.git", "0.0.25"},
-    {"optinum", "https://github.com/robolibs/optinum.git", "0.0.15"},
-    {"graphix", "https://github.com/robolibs/graphix.git", "0.0.5"},
+    {"datapod", "https://github.com/robolibs/datapod.git", "0.0.29"},
+    {"optinum", "https://github.com/robolibs/optinum.git", "0.0.16"},
+    {"graphix", "https://github.com/robolibs/graphix.git", "0.0.6"},
 }
 local EXAMPLE_DEPS = {
     {system = "rerun_sdk"},
