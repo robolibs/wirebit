@@ -1,10 +1,10 @@
 #pragma once
 
 #include <cstdint>
-#include <datapod/adapters/error.hpp>
-#include <datapod/adapters/result.hpp>
-#include <datapod/sequential/string.hpp>
-#include <datapod/sequential/vector.hpp>
+#include <datapod/pods/adapters/error.hpp>
+#include <datapod/pods/adapters/result.hpp>
+#include <datapod/pods/sequential/string.hpp>
+#include <datapod/pods/sequential/vector.hpp>
 
 namespace wirebit {
 
