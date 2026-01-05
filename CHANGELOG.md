@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.6] - 2026-01-05
+
+### <!-- 0 -->⛰️  Features
+
+- Implement TapLink for Linux TAP interface
+
+### <!-- 3 -->📚 Documentation
+
+- Update README with hardware link documentation (PtyLink, SocketCanLink, TapLink)
+
+### <!-- 6 -->🧪 Testing
+
+- Add explicit TAP interface creation/destruction verification tests
+
 ## [0.0.5] - 2026-01-05
 
 ### <!-- 0 -->⛰️  Features
