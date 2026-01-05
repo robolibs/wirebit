@@ -11,25 +11,41 @@
 #include <wirebit/frame.hpp>
 #include <wirebit/link.hpp>
 
+#ifdef HAS_HARDWARE
+// Use actual Linux SocketCAN headers when hardware support is enabled
+#include <linux/can.h>
+#else
+// Define our own can_frame when building without hardware support
+// This matches the layout of struct can_frame from <linux/can.h>
+struct can_frame {
+    uint32_t can_id; ///< CAN ID + EFF/RTR/ERR flags
+    uint8_t can_dlc; ///< Data length code (0-8)
+    uint8_t __pad;   ///< Padding
+    uint8_t __res0;  ///< Reserved
+    uint8_t __res1;  ///< Reserved
+    uint8_t data[8]; ///< CAN data bytes
+} __attribute__((packed));
+
+// CAN ID flags (compatible with Linux SocketCAN)
+// Using inline constexpr when HAS_HARDWARE is not defined
+inline constexpr uint32_t CAN_EFF_FLAG = 0x80000000U; ///< Extended frame format (29-bit ID)
+inline constexpr uint32_t CAN_RTR_FLAG = 0x40000000U; ///< Remote transmission request
+inline constexpr uint32_t CAN_ERR_FLAG = 0x20000000U; ///< Error frame
+inline constexpr uint32_t CAN_SFF_MASK = 0x000007FFU; ///< Standard frame format mask (11-bit)
+inline constexpr uint32_t CAN_EFF_MASK = 0x1FFFFFFFU; ///< Extended frame format mask (29-bit)
+#endif
+
 namespace wirebit {
 
-    /// Linux SocketCAN compatible CAN frame structure
-    /// Matches the layout of struct can_frame from <linux/can.h>
-    struct can_frame {
-        uint32_t can_id; ///< CAN ID + EFF/RTR/ERR flags
-        uint8_t can_dlc; ///< Data length code (0-8)
-        uint8_t __pad;   ///< Padding
-        uint8_t __res0;  ///< Reserved
-        uint8_t __res1;  ///< Reserved
-        uint8_t data[8]; ///< CAN data bytes
-    } __attribute__((packed));
+    // Import can_frame into wirebit namespace for convenience
+    using ::can_frame;
 
-    /// CAN ID flags (compatible with Linux SocketCAN)
-    constexpr uint32_t CAN_EFF_FLAG = 0x80000000U; ///< Extended frame format (29-bit ID)
-    constexpr uint32_t CAN_RTR_FLAG = 0x40000000U; ///< Remote transmission request
-    constexpr uint32_t CAN_ERR_FLAG = 0x20000000U; ///< Error frame
-    constexpr uint32_t CAN_SFF_MASK = 0x000007FFU; ///< Standard frame format mask (11-bit)
-    constexpr uint32_t CAN_EFF_MASK = 0x1FFFFFFFU; ///< Extended frame format mask (29-bit)
+    // Import CAN flags into wirebit namespace
+    inline constexpr uint32_t CAN_EFF_FLAG_V = CAN_EFF_FLAG;
+    inline constexpr uint32_t CAN_RTR_FLAG_V = CAN_RTR_FLAG;
+    inline constexpr uint32_t CAN_ERR_FLAG_V = CAN_ERR_FLAG;
+    inline constexpr uint32_t CAN_SFF_MASK_V = CAN_SFF_MASK;
+    inline constexpr uint32_t CAN_EFF_MASK_V = CAN_EFF_MASK;
 
     /// CAN bus configuration
     struct CanConfig {

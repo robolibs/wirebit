@@ -74,8 +74,8 @@ TEST_CASE("CanEndpoint basic operations") {
         uint8_t data[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11};
         auto frame = wirebit::CanEndpoint::make_ext_frame(0x12345678, data, 8);
 
-        CHECK((frame.can_id & wirebit::CAN_EFF_FLAG) != 0);
-        CHECK((frame.can_id & wirebit::CAN_EFF_MASK) == 0x12345678);
+        CHECK((frame.can_id & CAN_EFF_FLAG) != 0);
+        CHECK((frame.can_id & CAN_EFF_MASK) == 0x12345678);
         CHECK((uint8_t)frame.can_dlc == 8);
 
         // Send and receive
@@ -86,7 +86,7 @@ TEST_CASE("CanEndpoint basic operations") {
         auto recv_result = rx.recv_can(received);
         REQUIRE(recv_result.is_ok());
 
-        CHECK((received.can_id & wirebit::CAN_EFF_MASK) == 0x12345678);
+        CHECK((received.can_id & CAN_EFF_MASK) == 0x12345678);
         CHECK((uint8_t)received.can_dlc == 8);
         CHECK((uint8_t)received.data[0] == 0xAA);
         CHECK((uint8_t)received.data[7] == 0x11);
@@ -102,14 +102,14 @@ TEST_CASE("CanEndpoint basic operations") {
 
         // Create RTR frame
         auto rtr_std = wirebit::CanEndpoint::make_rtr_frame(0x100, false);
-        CHECK((rtr_std.can_id & wirebit::CAN_RTR_FLAG) != 0);
-        CHECK((rtr_std.can_id & wirebit::CAN_SFF_MASK) == 0x100);
+        CHECK((rtr_std.can_id & CAN_RTR_FLAG) != 0);
+        CHECK((rtr_std.can_id & CAN_SFF_MASK) == 0x100);
         CHECK((uint8_t)rtr_std.can_dlc == 0);
 
         auto rtr_ext = wirebit::CanEndpoint::make_rtr_frame(0x1000000, true);
-        CHECK((rtr_ext.can_id & wirebit::CAN_RTR_FLAG) != 0);
-        CHECK((rtr_ext.can_id & wirebit::CAN_EFF_FLAG) != 0);
-        CHECK((rtr_ext.can_id & wirebit::CAN_EFF_MASK) == 0x1000000);
+        CHECK((rtr_ext.can_id & CAN_RTR_FLAG) != 0);
+        CHECK((rtr_ext.can_id & CAN_EFF_FLAG) != 0);
+        CHECK((rtr_ext.can_id & CAN_EFF_MASK) == 0x1000000);
     }
 
     SUBCASE("Multiple frames") {

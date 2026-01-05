@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.0.5] - 2026-01-05
+
+### <!-- 0 -->⛰️  Features
+
+- Implement SocketCanLink for Linux SocketCAN interface
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- Add sudoers configuration and vcan test
+
 ## [0.0.4] - 2026-01-05
 
 ### <!-- 0 -->⛰️  Features
