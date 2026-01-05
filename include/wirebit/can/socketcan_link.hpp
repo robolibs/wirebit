@@ -2,6 +2,10 @@
 
 #ifdef HAS_HARDWARE
 
+// Disable format-truncation warning for snprintf to ifr_name (IFNAMSIZ=16 is intentional)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+
 #include <cerrno>
 #include <cstring>
 #include <echo/echo.hpp>
@@ -91,8 +95,7 @@ namespace wirebit {
             // Get interface index
             struct ifreq ifr;
             std::memset(&ifr, 0, sizeof(ifr));
-            std::strncpy(ifr.ifr_name, config.interface_name.c_str(), IFNAMSIZ - 1);
-            ifr.ifr_name[IFNAMSIZ - 1] = '\0'; // Ensure null termination
+            snprintf(ifr.ifr_name, IFNAMSIZ, "%s", config.interface_name.c_str());
 
             if (ioctl(sock_fd, SIOCGIFINDEX, &ifr) < 0) {
                 echo::error("Failed to get interface index for ", config.interface_name.c_str(), ": ", strerror(errno))
@@ -322,8 +325,7 @@ namespace wirebit {
 
             struct ifreq ifr;
             std::memset(&ifr, 0, sizeof(ifr));
-            std::strncpy(ifr.ifr_name, iface_name.c_str(), IFNAMSIZ - 1);
-            ifr.ifr_name[IFNAMSIZ - 1] = '\0'; // Ensure null termination
+            snprintf(ifr.ifr_name, IFNAMSIZ, "%s", iface_name.c_str());
 
             bool exists = (ioctl(sock, SIOCGIFINDEX, &ifr) >= 0);
             close(sock);
@@ -381,5 +383,7 @@ namespace wirebit {
     };
 
 } // namespace wirebit
+
+#pragma GCC diagnostic pop
 
 #endif // HAS_HARDWARE

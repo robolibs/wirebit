@@ -246,7 +246,7 @@ TEST_CASE("TapLink interface creation verified with ip command") {
 
     // Manual cleanup
     String cleanup = String("sudo ip link delete ") + iface + " 2>/dev/null";
-    (void)system(cleanup.c_str());
+    [[maybe_unused]] int cleanup_ret = system(cleanup.c_str());
 }
 
 TEST_CASE("TapLink interface destruction verified with ip command") {
