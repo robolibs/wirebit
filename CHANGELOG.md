@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.4] - 2026-01-05
+
+### <!-- 0 -->⛰️  Features
+
+- Add Pseudo-Terminal (PTY) Link
+
 ## [0.0.3] - 2026-01-04
 
 ### <!-- 0 -->⛰️  Features
