@@ -219,29 +219,60 @@ TEST_CASE("TapLink reject non-Ethernet frame") {
     REQUIRE(send_result.error().code == 1); // invalid_argument error code
 }
 
-TEST_CASE("TapLink interface verification with ip command") {
+TEST_CASE("TapLink interface creation verified with ip command") {
     String iface = make_tap_test_interface();
     TapConfig config{
         .interface_name = iface,
         .create_if_missing = true,
-        .destroy_on_close = false, // Keep interface after test for verification
+        .destroy_on_close = false, // Keep interface after link closes
         .set_up_on_create = true,
     };
 
-    auto result = TapLink::create(config);
-    REQUIRE(result.is_ok());
+    {
+        auto result = TapLink::create(config);
+        REQUIRE(result.is_ok());
 
-    // Verify interface exists using ip command
-    String cmd = String("ip link show ") + iface + " 2>/dev/null";
-    int ret = system(cmd.c_str());
-    REQUIRE(ret == 0);
+        // Verify interface exists using ip command
+        String cmd = String("ip link show ") + iface + " 2>/dev/null";
+        int ret = system(cmd.c_str());
+        REQUIRE(ret == 0);
+    }
+    // TapLink destructor called here, but destroy_on_close=false so interface remains
 
-    // Now destroy manually since destroy_on_close is false
-    result.value().~TapLink();
+    // Interface should still exist after TapLink is destroyed
+    String check_cmd = String("ip link show ") + iface + " 2>/dev/null";
+    int check_ret = system(check_cmd.c_str());
+    REQUIRE(check_ret == 0);
 
-    // Cleanup the interface
+    // Manual cleanup
     String cleanup = String("sudo ip link delete ") + iface + " 2>/dev/null";
-    system(cleanup.c_str());
+    (void)system(cleanup.c_str());
+}
+
+TEST_CASE("TapLink interface destruction verified with ip command") {
+    String iface = make_tap_test_interface();
+    TapConfig config{
+        .interface_name = iface,
+        .create_if_missing = true,
+        .destroy_on_close = true, // Destroy interface when link closes
+        .set_up_on_create = true,
+    };
+
+    {
+        auto result = TapLink::create(config);
+        REQUIRE(result.is_ok());
+
+        // Verify interface exists while link is open
+        String cmd = String("ip link show ") + iface + " 2>/dev/null";
+        int ret = system(cmd.c_str());
+        REQUIRE(ret == 0);
+    }
+    // TapLink destructor called here with destroy_on_close=true
+
+    // Interface should NOT exist after TapLink is destroyed
+    String check_cmd = String("ip link show ") + iface + " 2>/dev/null";
+    int check_ret = system(check_cmd.c_str());
+    REQUIRE(check_ret != 0); // Non-zero means interface doesn't exist
 }
 
 TEST_CASE("TapLink stats tracking") {
