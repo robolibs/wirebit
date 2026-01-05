@@ -50,12 +50,12 @@ ifndef BUILD_SYSTEM
 endif
 
 # ==================================================================================================
-# Hardware interface links: HARDWARE=1 (optional)
+# Hardware interface links: NO_HARDWARE=1 to disable (enabled by default)
 # ==================================================================================================
-HARDWARE ?=
-ifdef HARDWARE
-    CMAKE_HARDWARE_FLAG := -D$(PROJECT_CAP)_HARDWARE=ON
-    XMAKE_HARDWARE_FLAG := --hardware=y
+NO_HARDWARE ?=
+ifdef NO_HARDWARE
+    CMAKE_HARDWARE_FLAG := -D$(PROJECT_CAP)_NO_HARDWARE=ON
+    XMAKE_HARDWARE_FLAG := --no_hardware=y
 endif
 
 # ==================================================================================================

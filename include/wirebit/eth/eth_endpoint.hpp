@@ -13,7 +13,7 @@
 #include <wirebit/link.hpp>
 
 // Undefine system macros that conflict with our constants
-// (from linux/if_ether.h when HAS_HARDWARE is defined)
+// (from linux/if_ether.h when NO_HARDWARE is not defined)
 #ifdef ETH_ALEN
 #undef ETH_ALEN
 #endif

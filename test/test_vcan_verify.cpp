@@ -1,6 +1,6 @@
 #include <doctest/doctest.h>
 
-#ifdef HAS_HARDWARE
+#ifndef NO_HARDWARE
 
 #include <cstdlib>
 #include <cstring>
@@ -63,6 +63,6 @@ TEST_CASE("SocketCanLink interface creation verified with ip command") {
 
 #else
 
-TEST_CASE("SocketCanLink interface verification requires HAS_HARDWARE") { REQUIRE(true); }
+TEST_CASE("SocketCanLink interface verification requires hardware support") { REQUIRE(true); }
 
 #endif

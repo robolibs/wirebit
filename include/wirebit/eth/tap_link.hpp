@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef HAS_HARDWARE
+#ifndef NO_HARDWARE
 
 // Disable format-truncation warning for snprintf to ifr_name (IFNAMSIZ=16 is intentional)
 #pragma GCC diagnostic push
@@ -63,7 +63,7 @@ namespace wirebit {
     /// TAP link for real network interface communication
     /// Bridges wirebit to Linux TAP devices for L2 Ethernet frames
     ///
-    /// @note Requires HAS_HARDWARE compile flag
+    /// @note Disabled when NO_HARDWARE is defined
     /// @note Interface creation/deletion requires sudo (or sudoers config)
     ///
     /// Example usage:
@@ -382,4 +382,4 @@ namespace wirebit {
 
 #pragma GCC diagnostic pop
 
-#endif // HAS_HARDWARE
+#endif // NO_HARDWARE

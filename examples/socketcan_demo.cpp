@@ -13,7 +13,7 @@
 ///   2. In another terminal: candump vcan0
 ///   3. Or send frames: cansend vcan0 123#DEADBEEF
 
-#ifdef HAS_HARDWARE
+#ifndef NO_HARDWARE
 
 #include <chrono>
 #include <cstring>
@@ -150,14 +150,14 @@ int main() {
     return 0;
 }
 
-#else // HAS_HARDWARE
+#else // NO_HARDWARE
 
 #include <echo/echo.hpp>
 
 int main() {
-    echo::error("This demo requires HAS_HARDWARE compile flag.").red();
-    echo::info("Rebuild with: HARDWARE=1 make reconfig && HARDWARE=1 make build");
+    echo::error("This demo requires hardware support (disabled with NO_HARDWARE).").red();
+    echo::info("Rebuild without NO_HARDWARE flag: make reconfig && make build");
     return 1;
 }
 
-#endif // HAS_HARDWARE
+#endif // NO_HARDWARE

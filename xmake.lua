@@ -87,7 +87,7 @@ end
 -- Options
 option("examples", {default = false, showmenu = true, description = "Build examples"})
 option("tests",    {default = false, showmenu = true, description = "Enable tests"})
-option("hardware", {default = false, showmenu = true, description = "Enable hardware interface links (PTY, SocketCAN, TAP)"})
+option("no_hardware", {default = false, showmenu = true, description = "Disable hardware interface links (PTY, SocketCAN, TAP, TUN)"})
 option("short_namespace", {default = false, showmenu = true, description = "Enable short namespace alias"})
 option("expose_all", {default = false, showmenu = true, description = "Expose all submodule functions in optinum:: namespace"})
 
@@ -184,8 +184,8 @@ target(PROJECT_NAME)
     if has_config("expose_all") then
         add_defines("OPTINUM_EXPOSE_ALL", {public = true})
     end
-    if has_config("hardware") then
-        add_defines("HAS_HARDWARE", {public = true})
+    if has_config("no_hardware") then
+        add_defines("NO_HARDWARE", {public = true})
     end
 
     on_install(function (target)

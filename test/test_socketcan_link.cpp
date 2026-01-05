@@ -1,6 +1,6 @@
 #include <doctest/doctest.h>
 
-#ifdef HAS_HARDWARE
+#ifndef NO_HARDWARE
 
 #include <cstring>
 #include <thread>
@@ -288,11 +288,11 @@ TEST_CASE("SocketCanLink reject non-CAN frame") {
     REQUIRE(send_result.error().code == 1); // invalid_argument error code
 }
 
-#else // HAS_HARDWARE
+#else // NO_HARDWARE
 
-TEST_CASE("SocketCanLink requires HAS_HARDWARE") {
-    // This test just ensures the file compiles when HAS_HARDWARE is not defined
+TEST_CASE("SocketCanLink requires hardware support") {
+    // This test just ensures the file compiles when NO_HARDWARE is defined
     REQUIRE(true);
 }
 
-#endif // HAS_HARDWARE
+#endif // NO_HARDWARE

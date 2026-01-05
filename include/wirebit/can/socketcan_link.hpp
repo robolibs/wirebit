@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef HAS_HARDWARE
+#ifndef NO_HARDWARE
 
 // Disable format-truncation warning for snprintf to ifr_name (IFNAMSIZ=16 is intentional)
 #pragma GCC diagnostic push
@@ -52,7 +52,7 @@ namespace wirebit {
     /// SocketCAN link for real/virtual CAN bus communication
     /// Bridges wirebit to Linux SocketCAN interfaces (vcan0, can0, etc.)
     ///
-    /// @note Requires HAS_HARDWARE compile flag
+    /// @note Disabled when NO_HARDWARE is defined
     /// @note Interface creation/deletion requires sudo (or sudoers config)
     ///
     /// Example usage:
@@ -386,4 +386,4 @@ namespace wirebit {
 
 #pragma GCC diagnostic pop
 
-#endif // HAS_HARDWARE
+#endif // NO_HARDWARE

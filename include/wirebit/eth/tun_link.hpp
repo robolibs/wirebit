@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef HAS_HARDWARE
+#ifndef NO_HARDWARE
 
 // Disable format-truncation warning for snprintf to ifr_name (IFNAMSIZ=16 is intentional)
 #pragma GCC diagnostic push
@@ -64,7 +64,7 @@ namespace wirebit {
     /// TUN link for Layer 3 (IP) packet communication
     /// Bridges wirebit to Linux TUN devices for raw IP packets
     ///
-    /// @note Requires HAS_HARDWARE compile flag
+    /// @note Disabled when NO_HARDWARE is defined
     /// @note Interface creation/deletion requires sudo (or sudoers config)
     /// @note Unlike TAP (L2 Ethernet), TUN operates at L3 (IP) - no MAC addresses
     ///
@@ -408,4 +408,4 @@ namespace wirebit {
 
 #pragma GCC diagnostic pop
 
-#endif // HAS_HARDWARE
+#endif // NO_HARDWARE
