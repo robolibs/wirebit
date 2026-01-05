@@ -17,17 +17,20 @@
 #include <wirebit/shm/ring.hpp>
 #include <wirebit/shm/shm_link.hpp>
 
-// Protocol endpoints
-#include <wirebit/can/can_endpoint.hpp>
-#include <wirebit/eth/eth_endpoint.hpp>
-#include <wirebit/serial/serial_endpoint.hpp>
-
 // Hardware interface links (requires HAS_HARDWARE compile flag)
+// IMPORTANT: Include these BEFORE eth_endpoint.hpp so system headers
+// are included first, then eth_endpoint.hpp can #undef conflicting macros
 #ifdef HAS_HARDWARE
 #include <wirebit/can/socketcan_link.hpp>
 #include <wirebit/eth/tap_link.hpp>
 #include <wirebit/serial/pty_link.hpp>
 #endif // HAS_HARDWARE
+
+// Protocol endpoints
+// eth_endpoint.hpp must come after hardware headers to #undef system macros
+#include <wirebit/can/can_endpoint.hpp>
+#include <wirebit/eth/eth_endpoint.hpp>
+#include <wirebit/serial/serial_endpoint.hpp>
 
 namespace wirebit {
 

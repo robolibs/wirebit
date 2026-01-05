@@ -12,6 +12,39 @@
 #include <wirebit/frame.hpp>
 #include <wirebit/link.hpp>
 
+// Undefine system macros that conflict with our constants
+// (from linux/if_ether.h when HAS_HARDWARE is defined)
+#ifdef ETH_ALEN
+#undef ETH_ALEN
+#endif
+#ifdef ETH_HLEN
+#undef ETH_HLEN
+#endif
+#ifdef ETH_ZLEN
+#undef ETH_ZLEN
+#endif
+#ifdef ETH_DATA_LEN
+#undef ETH_DATA_LEN
+#endif
+#ifdef ETH_FRAME_LEN
+#undef ETH_FRAME_LEN
+#endif
+#ifdef ETH_FCS_LEN
+#undef ETH_FCS_LEN
+#endif
+#ifdef ETH_P_IP
+#undef ETH_P_IP
+#endif
+#ifdef ETH_P_ARP
+#undef ETH_P_ARP
+#endif
+#ifdef ETH_P_IPV6
+#undef ETH_P_IPV6
+#endif
+#ifdef ETH_P_8021Q
+#undef ETH_P_8021Q
+#endif
+
 namespace wirebit {
 
     /// Ethernet frame size constants
