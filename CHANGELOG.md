@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.0.9] - 2026-01-05
+
+### <!-- 1 -->🐛 Bug Fixes
+
+- Remove compiler warnings in hardware links (strncpy, system return)
+
+### <!-- 2 -->🚜 Refactor
+
+- Migrate from HAS_HARDWARE (opt-in) to NO_HARDWARE (opt-out)
+
 ## [0.0.8] - 2026-01-05
 
 ### <!-- 0 -->⛰️  Features
