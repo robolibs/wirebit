@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.0.8] - 2026-01-05
+
+### <!-- 0 -->⛰️  Features
+
+- Implement TunLink for Linux TUN interface (L3 IP packets)
+
+### <!-- 3 -->📚 Documentation
+
+- Fix roadmap versions (TAP=v0.6, TUN=v0.7)
+- Update README with TUN support (v0.5)
+
+## [0.0.7] - 2026-01-05
+
+### <!-- 0 -->⛰️  Features
+
+- Implement TunLink for Linux TUN interface (L3 IP packets)
+
+### <!-- 3 -->📚 Documentation
+
+- Fix roadmap versions (TAP=v0.6, TUN=v0.7)
+- Update README with TUN support (v0.5)
+
 ## [0.0.6] - 2026-01-05
 
 ### <!-- 0 -->⛰️  Features

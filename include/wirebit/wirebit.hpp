@@ -23,6 +23,7 @@
 #ifdef HAS_HARDWARE
 #include <wirebit/can/socketcan_link.hpp>
 #include <wirebit/eth/tap_link.hpp>
+#include <wirebit/eth/tun_link.hpp>
 #include <wirebit/serial/pty_link.hpp>
 #endif // HAS_HARDWARE
 

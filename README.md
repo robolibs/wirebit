@@ -1,6 +1,6 @@
 # wirebit
 
-Header-only C++ library for simulating hardware communication interfaces over shared memory, with bridges to real Linux interfaces (PTY, SocketCAN, TAP).
+Header-only C++ library for simulating hardware communication interfaces over shared memory, with bridges to real Linux interfaces (PTY, SocketCAN, TAP, TUN).
 
 ## Development Status
 
@@ -10,7 +10,7 @@ See [TODO.md](./TODO.md) for the complete development plan and current progress.
 
 Wirebit provides a unified framework for simulating serial, CAN, and Ethernet communication interfaces in software. It enables multi-process testing of embedded systems without requiring physical hardware. Communication happens over shared memory with configurable network impairments (latency, jitter, packet loss, corruption) for realistic simulation.
 
-The library also supports bridging to real Linux interfaces: PTY for serial, SocketCAN for CAN bus, and TAP for Ethernet. This allows seamless transition from simulation to hardware testing.
+The library also supports bridging to real Linux interfaces: PTY for serial, SocketCAN for CAN bus, TAP for L2 Ethernet, and TUN for L3 IP. This allows seamless transition from simulation to hardware testing.
 
 Key design principles:
 - **Header-only**: No compilation required, just include and use
@@ -22,26 +22,27 @@ Key design principles:
 ### Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                            WIREBIT LIBRARY                               │
-├──────────────────┬──────────────────┬──────────────────┬────────────────┤
-│  SerialEndpoint  │   CanEndpoint    │  EthEndpoint     │   LinkModel    │
-│  (Baud pacing)   │  (SocketCAN API) │  (L2 frames)     │  (Impairments) │
-├──────────────────┴──────────────────┴──────────────────┴────────────────┤
-│                              Frame Layer                                 │
-├──────────────────┬──────────────────┬──────────────────┬────────────────┤
-│    ShmLink       │    PtyLink       │  SocketCanLink   │   TapLink      │
-│  (Simulation)    │  (Serial PTY)    │  (CAN vcan/can)  │  (Ethernet)    │
-├──────────────────┼──────────────────┼──────────────────┼────────────────┤
-│  Shared Memory   │   /dev/pts/X     │  vcan/can iface  │  TAP interface │
-└──────────────────┴──────────────────┴──────────────────┴────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              WIREBIT LIBRARY                                     │
+├──────────────────┬──────────────────┬──────────────────┬────────────────────────┤
+│  SerialEndpoint  │   CanEndpoint    │  EthEndpoint     │      LinkModel         │
+│  (Baud pacing)   │  (SocketCAN API) │  (L2 frames)     │     (Impairments)      │
+├──────────────────┴──────────────────┴──────────────────┴────────────────────────┤
+│                                 Frame Layer                                      │
+├──────────────────┬──────────────────┬──────────────────┬───────────┬────────────┤
+│    ShmLink       │    PtyLink       │  SocketCanLink   │  TapLink  │  TunLink   │
+│  (Simulation)    │  (Serial PTY)    │  (CAN vcan/can)  │ (L2 Eth)  │  (L3 IP)   │
+├──────────────────┼──────────────────┼──────────────────┼───────────┼────────────┤
+│  Shared Memory   │   /dev/pts/X     │  vcan/can iface  │    TAP    │    TUN     │
+└──────────────────┴──────────────────┴──────────────────┴───────────┴────────────┘
 ```
 
 **Link Types:**
 - **ShmLink** - Shared memory for simulation (multi-process IPC)
 - **PtyLink** - Linux pseudo-terminal for real serial tools
 - **SocketCanLink** - Linux SocketCAN for real CAN bus (requires `HARDWARE=1`)
-- **TapLink** - Linux TAP device for real Ethernet (requires `HARDWARE=1`)
+- **TapLink** - Linux TAP device for L2 Ethernet (requires `HARDWARE=1`)
+- **TunLink** - Linux TUN device for L3 IP packets (requires `HARDWARE=1`)
 
 ## Installation
 
@@ -145,12 +146,21 @@ auto can = SocketCanLink::create(config).value();
 // Monitor with: candump vcan0
 ```
 
-### TapLink - Ethernet Bridge
+### TapLink - L2 Ethernet Bridge
 
 ```cpp
 TapConfig config{.interface_name = "tap0", .create_if_missing = true, .destroy_on_close = true};
 auto tap = TapLink::create(config).value();
 // Monitor with: sudo tcpdump -i tap0
+```
+
+### TunLink - L3 IP Bridge
+
+```cpp
+TunConfig config{.interface_name = "tun0", .ip_address = "10.100.0.1/24", .destroy_on_close = true};
+auto tun = TunLink::create(config).value();
+// Test with: ping 10.100.0.2 (your app responds to ICMP)
+// Monitor with: sudo tcpdump -i tun0
 ```
 
 **Sudoers setup (optional, for passwordless interface creation):**
@@ -160,8 +170,12 @@ auto tap = TapLink::create(config).value();
 %wheel ALL=(ALL) NOPASSWD: /usr/bin/ip link set vcan* up
 %wheel ALL=(ALL) NOPASSWD: /usr/bin/ip link delete vcan*
 %wheel ALL=(ALL) NOPASSWD: /usr/bin/ip tuntap add dev tap* mode tap user *
+%wheel ALL=(ALL) NOPASSWD: /usr/bin/ip tuntap add dev tun* mode tun user *
 %wheel ALL=(ALL) NOPASSWD: /usr/bin/ip link set tap* up
+%wheel ALL=(ALL) NOPASSWD: /usr/bin/ip link set tun* up
+%wheel ALL=(ALL) NOPASSWD: /usr/bin/ip addr add * dev tun*
 %wheel ALL=(ALL) NOPASSWD: /usr/bin/ip link delete tap*
+%wheel ALL=(ALL) NOPASSWD: /usr/bin/ip link delete tun*
 ```
 
 ## Features
@@ -169,7 +183,7 @@ auto tap = TapLink::create(config).value();
 - **Serial Endpoint** - Baud rate pacing (9600-921600 bps), configurable data/stop/parity bits
 - **CAN Endpoint** - SocketCAN-compatible, standard/extended IDs, RTR frames, bit timing
 - **Ethernet Endpoint** - L2 frames, MAC filtering, bandwidth shaping, promiscuous mode
-- **Hardware Links** - PTY, SocketCAN, TAP bridges to real Linux interfaces
+- **Hardware Links** - PTY, SocketCAN, TAP (L2), TUN (L3) bridges to real Linux interfaces
 - **Shared Memory** - Lock-free SPSC ring buffers, <1µs latency, zero syscalls in hot path
 - **Network Simulation** - Latency, jitter, drops, corruption with deterministic PRNG
 - **Type-Safe Errors** - datapod Result types, no exceptions in hot path
@@ -190,7 +204,8 @@ auto tap = TapLink::create(config).value();
 ./can_bus_hub      # Multi-node CAN hub
 ./pty_demo         # PTY bridge demo
 ./socketcan_demo   # SocketCAN bridge (HARDWARE=1)
-./tap_demo         # TAP bridge (HARDWARE=1)
+./tap_demo         # TAP L2 bridge (HARDWARE=1)
+./tun_demo         # TUN L3 bridge with ICMP responder (HARDWARE=1)
 ```
 
 ## Testing
@@ -203,16 +218,16 @@ HARDWARE=1 make test          # Include hardware link tests
 make test TEST=test_tap_link  # Run specific test
 ```
 
-**Coverage:** 16 test suites, 200+ assertions, hardware interface verification via `ip link`.
+**Coverage:** 17 test suites, 200+ assertions, hardware interface verification via `ip link`.
 
 ## Roadmap
 
 - **v0.1** - SHM backend with Serial/CAN/Ethernet endpoints ✅
 - **v0.2** - PTY backend for serial bridging ✅
 - **v0.3** - SocketCAN backend for CAN bridging ✅
-- **v0.4** - TAP backend for Ethernet bridging ✅
-- **v0.5** - Performance optimizations and benchmarking
-- **v0.6** - TUN support for L3 IP bridging
+- **v0.6** - TAP backend for L2 Ethernet bridging ✅
+- **v0.7** - TUN backend for L3 IP bridging ✅
+- **v0.8** - Performance optimizations and benchmarking
 
 ## Dependencies
 

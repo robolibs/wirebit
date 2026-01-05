@@ -11,7 +11,8 @@ namespace wirebit {
     enum class FrameType : uint16_t {
         SERIAL = 1,   ///< Serial data frame
         CAN = 2,      ///< CAN bus frame
-        ETHERNET = 3, ///< Ethernet frame
+        ETHERNET = 3, ///< Ethernet L2 frame (TAP)
+        IP = 4,       ///< IP L3 packet (TUN)
     };
 
     /// Frame header structure (packed for stable wire format)
