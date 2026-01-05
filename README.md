@@ -225,9 +225,9 @@ make test TEST=test_tap_link  # Run specific test
 - **v0.1** - SHM backend with Serial/CAN/Ethernet endpoints ✅
 - **v0.2** - PTY backend for serial bridging ✅
 - **v0.3** - SocketCAN backend for CAN bridging ✅
-- **v0.4** - TAP backend for L2 Ethernet bridging ✅
-- **v0.5** - TUN backend for L3 IP bridging ✅
-- **v0.6** - Performance optimizations and benchmarking
+- **v0.6** - TAP backend for L2 Ethernet bridging ✅
+- **v0.7** - TUN backend for L3 IP bridging ✅
+- **v0.8** - Performance optimizations and benchmarking
 
 ## Dependencies
 
