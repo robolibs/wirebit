@@ -1,6 +1,6 @@
 #include <doctest/doctest.h>
 
-#ifdef HAS_HARDWARE
+#ifndef NO_HARDWARE
 
 #include <cstring>
 #include <thread>
@@ -253,7 +253,7 @@ TEST_CASE("TunLink interface creation verified with ip command") {
 
     // Manual cleanup
     String cleanup = String("sudo ip link delete ") + iface + " 2>/dev/null";
-    (void)system(cleanup.c_str());
+    [[maybe_unused]] int cleanup_ret = system(cleanup.c_str());
 }
 
 TEST_CASE("TunLink interface destruction verified with ip command") {
@@ -351,11 +351,11 @@ TEST_CASE("TunLink creation without IP address") {
     REQUIRE(link.can_recv() == true);
 }
 
-#else // HAS_HARDWARE
+#else // NO_HARDWARE
 
-TEST_CASE("TunLink requires HAS_HARDWARE") {
-    // This test just ensures the file compiles when HAS_HARDWARE is not defined
+TEST_CASE("TunLink requires hardware support") {
+    // This test just ensures the file compiles when NO_HARDWARE is defined
     REQUIRE(true);
 }
 
-#endif // HAS_HARDWARE
+#endif // NO_HARDWARE

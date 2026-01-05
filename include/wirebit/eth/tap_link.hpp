@@ -1,6 +1,10 @@
 #pragma once
 
-#ifdef HAS_HARDWARE
+#ifndef NO_HARDWARE
+
+// Disable format-truncation warning for snprintf to ifr_name (IFNAMSIZ=16 is intentional)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
 
 // System headers first (they may define ETH_* macros)
 #include <cerrno>
@@ -59,7 +63,7 @@ namespace wirebit {
     /// TAP link for real network interface communication
     /// Bridges wirebit to Linux TAP devices for L2 Ethernet frames
     ///
-    /// @note Requires HAS_HARDWARE compile flag
+    /// @note Disabled when NO_HARDWARE is defined
     /// @note Interface creation/deletion requires sudo (or sudoers config)
     ///
     /// Example usage:
@@ -99,8 +103,7 @@ namespace wirebit {
             struct ifreq ifr;
             std::memset(&ifr, 0, sizeof(ifr));
             ifr.ifr_flags = IFF_TAP | IFF_NO_PI; // TAP device, no packet info header
-            std::strncpy(ifr.ifr_name, config.interface_name.c_str(), IFNAMSIZ - 1);
-            ifr.ifr_name[IFNAMSIZ - 1] = '\0';
+            snprintf(ifr.ifr_name, IFNAMSIZ, "%s", config.interface_name.c_str());
 
             if (ioctl(tap_fd, TUNSETIFF, &ifr) < 0) {
                 echo::error("Failed to configure TAP interface: ", strerror(errno)).red();
@@ -311,8 +314,7 @@ namespace wirebit {
 
             struct ifreq ifr;
             std::memset(&ifr, 0, sizeof(ifr));
-            std::strncpy(ifr.ifr_name, iface_name.c_str(), IFNAMSIZ - 1);
-            ifr.ifr_name[IFNAMSIZ - 1] = '\0';
+            snprintf(ifr.ifr_name, IFNAMSIZ, "%s", iface_name.c_str());
 
             bool exists = (ioctl(sock, SIOCGIFINDEX, &ifr) >= 0);
             close(sock);
@@ -378,4 +380,6 @@ namespace wirebit {
 
 } // namespace wirebit
 
-#endif // HAS_HARDWARE
+#pragma GCC diagnostic pop
+
+#endif // NO_HARDWARE

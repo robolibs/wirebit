@@ -1,6 +1,6 @@
 #include <doctest/doctest.h>
 
-#ifdef HAS_HARDWARE
+#ifndef NO_HARDWARE
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -180,11 +180,11 @@ TEST_CASE("PtyLink partial frame handling") {
     close(slave_fd);
 }
 
-#else // HAS_HARDWARE
+#else // NO_HARDWARE
 
-TEST_CASE("PtyLink requires HAS_HARDWARE") {
-    // This test just ensures the file compiles when HAS_HARDWARE is not defined
+TEST_CASE("PtyLink requires hardware support") {
+    // This test just ensures the file compiles when NO_HARDWARE is defined
     REQUIRE(true);
 }
 
-#endif // HAS_HARDWARE
+#endif // NO_HARDWARE

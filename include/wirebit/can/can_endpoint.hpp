@@ -11,7 +11,7 @@
 #include <wirebit/frame.hpp>
 #include <wirebit/link.hpp>
 
-#ifdef HAS_HARDWARE
+#ifndef NO_HARDWARE
 // Use actual Linux SocketCAN headers when hardware support is enabled
 #include <linux/can.h>
 #else
@@ -27,7 +27,7 @@ struct can_frame {
 } __attribute__((packed));
 
 // CAN ID flags (compatible with Linux SocketCAN)
-// Using inline constexpr when HAS_HARDWARE is not defined
+// Using inline constexpr when NO_HARDWARE is defined
 inline constexpr uint32_t CAN_EFF_FLAG = 0x80000000U; ///< Extended frame format (29-bit ID)
 inline constexpr uint32_t CAN_RTR_FLAG = 0x40000000U; ///< Remote transmission request
 inline constexpr uint32_t CAN_ERR_FLAG = 0x20000000U; ///< Error frame

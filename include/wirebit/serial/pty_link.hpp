@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef HAS_HARDWARE
+#ifndef NO_HARDWARE
 
 #include <cstring>
 #include <echo/echo.hpp>
@@ -38,7 +38,7 @@ namespace wirebit {
     /// Bridges wirebit to real PTY devices (/dev/pts/X)
     /// External tools like minicom, picocom can connect to the slave PTY
     ///
-    /// @note Requires HAS_HARDWARE compile flag
+    /// @note Disabled when NO_HARDWARE is defined
     /// @note NO sudo required - PTY is completely userspace
     class PtyLink : public Link {
       public:
@@ -258,4 +258,4 @@ namespace wirebit {
 
 } // namespace wirebit
 
-#endif // HAS_HARDWARE
+#endif // NO_HARDWARE

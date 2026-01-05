@@ -1,6 +1,10 @@
 #pragma once
 
-#ifdef HAS_HARDWARE
+#ifndef NO_HARDWARE
+
+// Disable format-truncation warning for snprintf to ifr_name (IFNAMSIZ=16 is intentional)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
 
 #include <cerrno>
 #include <cstring>
@@ -48,7 +52,7 @@ namespace wirebit {
     /// SocketCAN link for real/virtual CAN bus communication
     /// Bridges wirebit to Linux SocketCAN interfaces (vcan0, can0, etc.)
     ///
-    /// @note Requires HAS_HARDWARE compile flag
+    /// @note Disabled when NO_HARDWARE is defined
     /// @note Interface creation/deletion requires sudo (or sudoers config)
     ///
     /// Example usage:
@@ -91,8 +95,7 @@ namespace wirebit {
             // Get interface index
             struct ifreq ifr;
             std::memset(&ifr, 0, sizeof(ifr));
-            std::strncpy(ifr.ifr_name, config.interface_name.c_str(), IFNAMSIZ - 1);
-            ifr.ifr_name[IFNAMSIZ - 1] = '\0'; // Ensure null termination
+            snprintf(ifr.ifr_name, IFNAMSIZ, "%s", config.interface_name.c_str());
 
             if (ioctl(sock_fd, SIOCGIFINDEX, &ifr) < 0) {
                 echo::error("Failed to get interface index for ", config.interface_name.c_str(), ": ", strerror(errno))
@@ -322,8 +325,7 @@ namespace wirebit {
 
             struct ifreq ifr;
             std::memset(&ifr, 0, sizeof(ifr));
-            std::strncpy(ifr.ifr_name, iface_name.c_str(), IFNAMSIZ - 1);
-            ifr.ifr_name[IFNAMSIZ - 1] = '\0'; // Ensure null termination
+            snprintf(ifr.ifr_name, IFNAMSIZ, "%s", iface_name.c_str());
 
             bool exists = (ioctl(sock, SIOCGIFINDEX, &ifr) >= 0);
             close(sock);
@@ -382,4 +384,6 @@ namespace wirebit {
 
 } // namespace wirebit
 
-#endif // HAS_HARDWARE
+#pragma GCC diagnostic pop
+
+#endif // NO_HARDWARE
