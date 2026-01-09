@@ -16,7 +16,8 @@ namespace wirebit {
 
     /// Configuration for PTY link
     struct PtyConfig {
-        bool auto_destroy = true; ///< Automatically close PTY on destructor
+        bool auto_destroy = true;        ///< Automatically close PTY on destructor
+        bool auto_flush_on_block = true; ///< Auto-flush output buffer when write would block
     };
 
     /// Statistics for PtyLink
@@ -136,11 +137,23 @@ namespace wirebit {
             ssize_t written = write(master_fd_, encoded.data(), encoded.size());
             if (written < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    echo::warn("PTY write would block").yellow();
-                    return Result<Unit, Error>::err(Error::timeout("PTY write would block"));
+                    if (config_.auto_flush_on_block) {
+                        // Flush output buffer and retry once
+                        echo::trace("PTY buffer full, flushing...");
+                        tcflush(master_fd_, TCOFLUSH);
+                        written = write(master_fd_, encoded.data(), encoded.size());
+                        if (written < 0) {
+                            echo::warn("PTY write failed after flush").yellow();
+                            return Result<Unit, Error>::err(Error::timeout("PTY write would block"));
+                        }
+                    } else {
+                        echo::warn("PTY write would block").yellow();
+                        return Result<Unit, Error>::err(Error::timeout("PTY write would block"));
+                    }
+                } else {
+                    echo::error("PTY write failed: ", strerror(errno)).red();
+                    return Result<Unit, Error>::err(Error::io_error("PTY write failed"));
                 }
-                echo::error("PTY write failed: ", strerror(errno)).red();
-                return Result<Unit, Error>::err(Error::io_error("PTY write failed"));
             }
 
             if (static_cast<size_t>(written) != encoded.size()) {
@@ -243,6 +256,37 @@ namespace wirebit {
 
         /// Clear receive buffer
         inline void clear_rx_buffer() { rx_buffer_.clear(); }
+
+        /// Flush (discard) pending output data in kernel buffer
+        /// Call this periodically if the slave side may not be reading
+        /// @return true if flush succeeded, false otherwise
+        inline bool flush_output() {
+            if (master_fd_ < 0) {
+                return false;
+            }
+            // TCOFLUSH discards data written but not transmitted (output queue)
+            return tcflush(master_fd_, TCOFLUSH) == 0;
+        }
+
+        /// Flush (discard) pending input data in kernel buffer
+        /// @return true if flush succeeded, false otherwise
+        inline bool flush_input() {
+            if (master_fd_ < 0) {
+                return false;
+            }
+            // TCIFLUSH discards data received but not read (input queue)
+            return tcflush(master_fd_, TCIFLUSH) == 0;
+        }
+
+        /// Flush (discard) both input and output kernel buffers
+        /// @return true if flush succeeded, false otherwise
+        inline bool flush() {
+            if (master_fd_ < 0) {
+                return false;
+            }
+            // TCIOFLUSH discards both input and output queues
+            return tcflush(master_fd_, TCIOFLUSH) == 0;
+        }
 
       private:
         int master_fd_;      ///< Master PTY file descriptor
