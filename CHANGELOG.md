@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.0.10] - 2026-01-09
+
+### <!-- 1 -->🐛 Bug Fixes
+
+- Improve PTY write resilience and add flush controls
+- Improve hardware flag management in Makefile
+
+### <!-- 3 -->📚 Documentation
+
+- Update README with new features
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- Merge main into develop (sync branches)
+- Update config by ignoring sudoers files
+- Update sudoers configuration for Wirebit
+
 ## [0.0.9] - 2026-01-05
 
 ### <!-- 1 -->🐛 Bug Fixes
