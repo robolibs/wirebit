@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
         snprintf(drop_prob_str, sizeof(drop_prob_str), "%.6f", drop_prob);
 
         // Execute hub
-        execl("./build/linux/x86_64/release/can_bus_hub", "can_bus_hub", num_nodes_str, "500000", drop_prob_str, "0.0",
+        execl("./can_bus_hub", "can_bus_hub", num_nodes_str, "500000", drop_prob_str, "0.0",
               nullptr);
 
         // If execl fails

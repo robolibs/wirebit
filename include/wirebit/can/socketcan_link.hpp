@@ -345,16 +345,17 @@ namespace wirebit {
             (void)ret; // Ignore return value - module may already be loaded
 
             // Create vcan interface
-            String cmd = "sudo ip link add dev " + iface_name + " type vcan 2>/dev/null";
-            ret = system(cmd.c_str());
+            char cmd[256];
+            snprintf(cmd, sizeof(cmd), "sudo ip link add dev %s type vcan 2>/dev/null", iface_name.c_str());
+            ret = system(cmd);
             if (ret != 0) {
                 // May already exist, try to continue
                 echo::warn("ip link add returned ", ret, " (interface may already exist)").yellow();
             }
 
             // Bring interface up
-            cmd = "sudo ip link set " + iface_name + " up";
-            ret = system(cmd.c_str());
+            snprintf(cmd, sizeof(cmd), "sudo ip link set %s up", iface_name.c_str());
+            ret = system(cmd);
             if (ret != 0) {
                 echo::error("Failed to bring up interface ", iface_name.c_str()).red();
                 return Result<Unit, Error>::err(Error::io_error("Failed to bring up CAN interface"));
@@ -374,8 +375,9 @@ namespace wirebit {
         /// @param iface_name Interface name to destroy
         static inline void destroy_vcan_interface(const String &iface_name) {
             echo::info("Destroying virtual CAN interface: ", iface_name.c_str());
-            String cmd = "sudo ip link delete " + iface_name + " 2>/dev/null";
-            int ret = system(cmd.c_str());
+            char cmd[256];
+            snprintf(cmd, sizeof(cmd), "sudo ip link delete %s 2>/dev/null", iface_name.c_str());
+            int ret = system(cmd);
             if (ret != 0) {
                 echo::warn("Failed to delete interface ", iface_name.c_str(), " (may not exist)").yellow();
             }

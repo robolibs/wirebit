@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdio>
 #include <echo/echo.hpp>
 #include <memory>
 #include <wirebit/common/types.hpp>
@@ -44,8 +45,11 @@ namespace wirebit {
                                              const LinkModel *model = nullptr) {
             echo::info("Creating ShmLink: ", name, " (capacity: ", capacity_bytes, " bytes)");
 
-            String tx_name = String("/") + name + "_tx";
-            String rx_name = String("/") + name + "_rx";
+            char buf[256];
+            snprintf(buf, sizeof(buf), "/%s_tx", name.c_str());
+            String tx_name(buf);
+            snprintf(buf, sizeof(buf), "/%s_rx", name.c_str());
+            String rx_name(buf);
 
             auto tx_result = FrameRing::create_shm(tx_name, capacity_bytes);
             if (!tx_result.is_ok()) {
@@ -79,8 +83,11 @@ namespace wirebit {
             echo::info("Attaching to ShmLink: ", name);
 
             // Note: TX/RX are swapped for client (client's TX is server's RX)
-            String tx_name = String("/") + name + "_rx";
-            String rx_name = String("/") + name + "_tx";
+            char buf[256];
+            snprintf(buf, sizeof(buf), "/%s_rx", name.c_str());
+            String tx_name(buf);
+            snprintf(buf, sizeof(buf), "/%s_tx", name.c_str());
+            String rx_name(buf);
 
             auto tx_result = FrameRing::attach_shm(tx_name);
             if (!tx_result.is_ok()) {
