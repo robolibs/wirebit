@@ -17,8 +17,9 @@ using namespace wirebit;
 
 // Test helper: cleanup socket file
 void cleanup_socket(const char *name) {
-    String socket_path = String("/tmp/wirebit_") + String(name) + String(".sock");
-    unlink(socket_path.c_str());
+    char socket_path[256];
+    snprintf(socket_path, sizeof(socket_path), "/tmp/wirebit_%s.sock", name);
+    unlink(socket_path);
 }
 
 // Test 1: Basic eventfd creation and handshake

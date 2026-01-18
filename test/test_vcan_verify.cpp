@@ -10,14 +10,17 @@
 using namespace wirebit;
 
 TEST_CASE("SocketCanLink interface creation verified with ip command") {
-    String iface = "wbiptest";
+    const char *iface = "wbiptest";
 
     // Clean up any leftover
-    [[maybe_unused]] int pre_cleanup = system(("sudo ip link delete " + iface + " 2>/dev/null").c_str());
+    char cmd[256];
+    snprintf(cmd, sizeof(cmd), "sudo ip link delete %s 2>/dev/null", iface);
+    [[maybe_unused]] int pre_cleanup = system(cmd);
 
     // Verify interface does NOT exist before
-    String check_cmd = "ip link show " + iface + " 2>&1";
-    FILE *fp = popen(check_cmd.c_str(), "r");
+    char check_cmd[256];
+    snprintf(check_cmd, sizeof(check_cmd), "ip link show %s 2>&1", iface);
+    FILE *fp = popen(check_cmd, "r");
     char buf[256] = {0};
     if (fgets(buf, sizeof(buf), fp) == nullptr)
         buf[0] = '\0';
@@ -28,7 +31,7 @@ TEST_CASE("SocketCanLink interface creation verified with ip command") {
 
     // Create SocketCanLink
     SocketCanConfig config{
-        .interface_name = iface,
+        .interface_name = String(iface),
         .create_if_missing = true,
         .destroy_on_close = true,
     };
@@ -38,20 +41,20 @@ TEST_CASE("SocketCanLink interface creation verified with ip command") {
         REQUIRE(result.is_ok());
 
         // NOW verify interface EXISTS with ip command
-        fp = popen(check_cmd.c_str(), "r");
+        fp = popen(check_cmd, "r");
         memset(buf, 0, sizeof(buf));
         if (fgets(buf, sizeof(buf), fp) == nullptr)
             buf[0] = '\0';
         int during_status = pclose(fp);
 
         std::cout << "During - status: " << during_status << ", output: " << buf << std::endl;
-        CHECK(during_status == 0);                    // Should succeed - interface exists
-        CHECK(strstr(buf, iface.c_str()) != nullptr); // Should contain interface name
+        CHECK(during_status == 0);                 // Should succeed - interface exists
+        CHECK(strstr(buf, iface) != nullptr);      // Should contain interface name
 
     } // Destructor runs here, should delete interface
 
     // Verify interface is GONE after destruction
-    fp = popen(check_cmd.c_str(), "r");
+    fp = popen(check_cmd, "r");
     memset(buf, 0, sizeof(buf));
     if (fgets(buf, sizeof(buf), fp) == nullptr)
         buf[0] = '\0';
