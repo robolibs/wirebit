@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.12] - 2026-01-25
+
+### <!-- 0 -->⛰️  Features
+
+- Implement TTY serial link for Linux
+
 ## [0.0.11] - 2026-01-18
 
 ### <!-- 7 -->⚙️ Miscellaneous Tasks

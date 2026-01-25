@@ -25,6 +25,7 @@
 #include <wirebit/eth/tap_link.hpp>
 #include <wirebit/eth/tun_link.hpp>
 #include <wirebit/serial/pty_link.hpp>
+#include <wirebit/serial/tty_link.hpp>
 #endif // NO_HARDWARE
 
 // Protocol endpoints
