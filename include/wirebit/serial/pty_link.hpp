@@ -2,6 +2,7 @@
 
 #ifndef NO_HARDWARE
 
+#include <cerrno>
 #include <cstring>
 #include <echo/echo.hpp>
 #include <fcntl.h>
@@ -18,6 +19,14 @@ namespace wirebit {
     struct PtyConfig {
         bool auto_destroy = true;        ///< Automatically close PTY on destructor
         bool auto_flush_on_block = true; ///< Auto-flush output buffer when write would block
+
+        /// When true, expose raw serial bytes on the slave PTY.
+        ///
+        /// - send(): writes FrameType::SERIAL payload bytes directly to the PTY
+        /// - recv(): reads raw bytes from the PTY and wraps them into a FrameType::SERIAL frame
+        ///
+        /// When false, the PTY transports wirebit frames using encode_frame()/decode_frame().
+        bool raw_bytes = false;
     };
 
     /// Statistics for PtyLink
@@ -128,10 +137,47 @@ namespace wirebit {
                 return Result<Unit, Error>::err(Error::io_error("PTY not open"));
             }
 
-            // Encode frame to bytes
+            if (config_.raw_bytes) {
+                if (frame.type() != FrameType::SERIAL) {
+                    return Result<Unit, Error>::err(Error::invalid_argument("Expected SERIAL frame type"));
+                }
+                if (frame.payload.empty()) {
+                    return Result<Unit, Error>::ok(Unit{});
+                }
+                echo::trace("PtyLink::send(raw): ", frame.payload.size(), " bytes");
+                ssize_t written = write(master_fd_, frame.payload.data(), frame.payload.size());
+                if (written < 0) {
+                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                        if (config_.auto_flush_on_block) {
+                            echo::trace("PTY buffer full, flushing...");
+                            tcflush(master_fd_, TCOFLUSH);
+                            written = write(master_fd_, frame.payload.data(), frame.payload.size());
+                            if (written < 0) {
+                                echo::warn("PTY write failed after flush").yellow();
+                                return Result<Unit, Error>::err(Error::timeout("PTY write would block"));
+                            }
+                        } else {
+                            echo::warn("PTY write would block").yellow();
+                            return Result<Unit, Error>::err(Error::timeout("PTY write would block"));
+                        }
+                    } else {
+                        echo::error("PTY write failed: ", strerror(errno)).red();
+                        return Result<Unit, Error>::err(Error::io_error("PTY write failed"));
+                    }
+                }
+                if (static_cast<size_t>(written) != frame.payload.size()) {
+                    echo::warn("PTY partial write: ", written, " of ", frame.payload.size(), " bytes").yellow();
+                }
+                stats_.frames_sent++;
+                stats_.bytes_sent += written;
+                echo::debug("PtyLink sent(raw): ", written, " bytes");
+                return Result<Unit, Error>::ok(Unit{});
+            }
+
+            // Framed mode: encode wirebit frame to bytes
             Bytes encoded = encode_frame(frame);
 
-            echo::trace("PtyLink::send: ", encoded.size(), " bytes");
+            echo::trace("PtyLink::send(framed): ", encoded.size(), " bytes");
 
             // Write to master PTY
             ssize_t written = write(master_fd_, encoded.data(), encoded.size());
@@ -163,7 +209,7 @@ namespace wirebit {
             stats_.frames_sent++;
             stats_.bytes_sent += written;
 
-            echo::debug("PtyLink sent: ", written, " bytes");
+            echo::debug("PtyLink sent(framed): ", written, " bytes");
             return Result<Unit, Error>::ok(Unit{});
         }
 
@@ -172,6 +218,30 @@ namespace wirebit {
         inline Result<Frame, Error> recv() override {
             if (master_fd_ < 0) {
                 return Result<Frame, Error>::err(Error::io_error("PTY not open"));
+            }
+
+            if (config_.raw_bytes) {
+                uint8_t temp_buf[4096];
+                ssize_t bytes_read = read(master_fd_, temp_buf, sizeof(temp_buf));
+
+                if (bytes_read < 0) {
+                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                        return Result<Frame, Error>::err(Error::timeout("No data available"));
+                    }
+                    echo::error("PTY read failed: ", strerror(errno)).red();
+                    return Result<Frame, Error>::err(Error::io_error("PTY read failed"));
+                }
+
+                if (bytes_read == 0) {
+                    return Result<Frame, Error>::err(Error::timeout("No data available"));
+                }
+
+                stats_.bytes_received += bytes_read;
+                stats_.frames_received++;
+
+                Bytes payload(temp_buf, temp_buf + bytes_read);
+                Frame frame = make_frame(FrameType::SERIAL, std::move(payload), 0, 0);
+                return Result<Frame, Error>::ok(std::move(frame));
             }
 
             // Read available data into buffer
