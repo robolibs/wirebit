@@ -79,7 +79,7 @@ namespace wirebit {
         /// @param config TAP configuration
         /// @return Result containing TapLink or error
         static inline Result<TapLink, Error> create(const TapConfig &config = {}) {
-            echo::info("Creating TapLink for interface: ", config.interface_name.c_str());
+            echo::trace("Creating TapLink for interface: ", config.interface_name.c_str());
 
             // Check if interface exists
             bool interface_exists = check_interface_exists(config.interface_name);
@@ -120,7 +120,7 @@ namespace wirebit {
                 }
             }
 
-            echo::info("TapLink created: interface=", config.interface_name.c_str(), " fd=", tap_fd).green();
+            echo::trace("TapLink created: interface=", config.interface_name.c_str(), " fd=", tap_fd).green();
 
             return Result<TapLink, Error>::ok(TapLink(tap_fd, config, !interface_exists && config.create_if_missing));
         }
@@ -144,7 +144,7 @@ namespace wirebit {
             }
 
             if (config_.destroy_on_close && we_created_interface_) {
-                echo::info("Destroying TAP interface: ", config_.interface_name.c_str());
+                echo::trace("Destroying TAP interface: ", config_.interface_name.c_str());
                 destroy_tap_interface(config_.interface_name);
             }
         }
@@ -327,7 +327,7 @@ namespace wirebit {
         /// @param iface_name Interface name to create
         /// @return Result indicating success or error
         static inline Result<Unit, Error> create_tap_interface(const String &iface_name) {
-            echo::info("Creating TAP interface: ", iface_name.c_str());
+            echo::trace("Creating TAP interface: ", iface_name.c_str());
 
             // Get current user for ownership
             const char *user = getenv("USER");
@@ -348,7 +348,7 @@ namespace wirebit {
                 return Result<Unit, Error>::err(Error::io_error("Failed to create TAP interface"));
             }
 
-            echo::info("TAP interface ", iface_name.c_str(), " created").green();
+            echo::trace("TAP interface ", iface_name.c_str(), " created").green();
             return Result<Unit, Error>::ok(Unit{});
         }
 
@@ -362,14 +362,14 @@ namespace wirebit {
                 echo::error("Failed to bring up interface ", iface_name.c_str()).red();
                 return Result<Unit, Error>::err(Error::io_error("Failed to bring up interface"));
             }
-            echo::info("Interface ", iface_name.c_str(), " is up").green();
+            echo::trace("Interface ", iface_name.c_str(), " is up").green();
             return Result<Unit, Error>::ok(Unit{});
         }
 
         /// Destroy a TAP interface
         /// @param iface_name Interface name to destroy
         static inline void destroy_tap_interface(const String &iface_name) {
-            echo::info("Destroying TAP interface: ", iface_name.c_str());
+            echo::trace("Destroying TAP interface: ", iface_name.c_str());
             String cmd = String("sudo ip link delete ") + iface_name + " 2>/dev/null";
             int ret = system(cmd.c_str());
             if (ret != 0) {

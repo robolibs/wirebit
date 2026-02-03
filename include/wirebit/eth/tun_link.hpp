@@ -81,7 +81,7 @@ namespace wirebit {
         /// @param config TUN configuration
         /// @return Result containing TunLink or error
         static inline Result<TunLink, Error> create(const TunConfig &config = {}) {
-            echo::info("Creating TunLink for interface: ", config.interface_name.c_str());
+            echo::trace("Creating TunLink for interface: ", config.interface_name.c_str());
 
             // Check if interface exists
             bool interface_exists = check_interface_exists(config.interface_name);
@@ -131,7 +131,7 @@ namespace wirebit {
                 }
             }
 
-            echo::info("TunLink created: interface=", config.interface_name.c_str(), " fd=", tun_fd).green();
+            echo::trace("TunLink created: interface=", config.interface_name.c_str(), " fd=", tun_fd).green();
 
             return Result<TunLink, Error>::ok(TunLink(tun_fd, config, !interface_exists && config.create_if_missing));
         }
@@ -156,7 +156,7 @@ namespace wirebit {
             }
 
             if (config_.destroy_on_close && we_created_interface_) {
-                echo::info("Destroying TUN interface: ", config_.interface_name.c_str());
+                echo::trace("Destroying TUN interface: ", config_.interface_name.c_str());
                 destroy_tun_interface(config_.interface_name);
             }
         }
@@ -337,7 +337,7 @@ namespace wirebit {
         /// @param iface_name Interface name to create
         /// @return Result indicating success or error
         static inline Result<Unit, Error> create_tun_interface(const String &iface_name) {
-            echo::info("Creating TUN interface: ", iface_name.c_str());
+            echo::trace("Creating TUN interface: ", iface_name.c_str());
 
             // Get current user for ownership
             const char *user = getenv("USER");
@@ -358,7 +358,7 @@ namespace wirebit {
                 return Result<Unit, Error>::err(Error::io_error("Failed to create TUN interface"));
             }
 
-            echo::info("TUN interface ", iface_name.c_str(), " created").green();
+            echo::trace("TUN interface ", iface_name.c_str(), " created").green();
             return Result<Unit, Error>::ok(Unit{});
         }
 
@@ -367,14 +367,14 @@ namespace wirebit {
         /// @param ip_addr IP address with CIDR (e.g., "10.0.0.1/24")
         /// @return Result indicating success or error
         static inline Result<Unit, Error> assign_ip_address(const String &iface_name, const String &ip_addr) {
-            echo::info("Assigning IP address ", ip_addr.c_str(), " to ", iface_name.c_str());
+            echo::trace("Assigning IP address ", ip_addr.c_str(), " to ", iface_name.c_str());
             String cmd = String("sudo ip addr add ") + ip_addr + " dev " + iface_name + " 2>/dev/null";
             int ret = system(cmd.c_str());
             if (ret != 0) {
                 echo::error("Failed to assign IP address to ", iface_name.c_str()).red();
                 return Result<Unit, Error>::err(Error::io_error("Failed to assign IP address"));
             }
-            echo::info("IP address assigned").green();
+            echo::trace("IP address assigned").green();
             return Result<Unit, Error>::ok(Unit{});
         }
 
@@ -388,14 +388,14 @@ namespace wirebit {
                 echo::error("Failed to bring up interface ", iface_name.c_str()).red();
                 return Result<Unit, Error>::err(Error::io_error("Failed to bring up interface"));
             }
-            echo::info("Interface ", iface_name.c_str(), " is up").green();
+            echo::trace("Interface ", iface_name.c_str(), " is up").green();
             return Result<Unit, Error>::ok(Unit{});
         }
 
         /// Destroy a TUN interface
         /// @param iface_name Interface name to destroy
         static inline void destroy_tun_interface(const String &iface_name) {
-            echo::info("Destroying TUN interface: ", iface_name.c_str());
+            echo::trace("Destroying TUN interface: ", iface_name.c_str());
             String cmd = String("sudo ip link delete ") + iface_name + " 2>/dev/null";
             int ret = system(cmd.c_str());
             if (ret != 0) {

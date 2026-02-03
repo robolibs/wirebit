@@ -56,7 +56,7 @@ namespace wirebit {
         /// @param config PTY configuration
         /// @return Result containing PtyLink or error
         static inline Result<PtyLink, Error> create(const PtyConfig &config = {}) {
-            echo::info("Creating PtyLink...");
+            echo::trace("Creating PtyLink...");
 
             // Open master PTY
             int master_fd = posix_openpt(O_RDWR | O_NOCTTY | O_NONBLOCK);
@@ -88,7 +88,7 @@ namespace wirebit {
             }
 
             String slave_path(slave_path_cstr);
-            echo::info("PtyLink created: master_fd=", master_fd, " slave=", slave_path.c_str()).green();
+            echo::trace("PtyLink created: master_fd=", master_fd, " slave=", slave_path.c_str()).green();
 
             return Result<PtyLink, Error>::ok(PtyLink(master_fd, slave_path, config));
         }

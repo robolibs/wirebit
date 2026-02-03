@@ -23,7 +23,7 @@ namespace wirebit {
     /// @param name Link name (used for socket path)
     /// @return Result containing EventfdPair or error
     inline Result<EventfdPair, Error> create_and_send_eventfds(const String &name) {
-        echo::info("Creating eventfds for: ", name.c_str());
+        echo::trace("Creating eventfds for: ", name.c_str());
 
         String sock_path = "/tmp/wirebit_" + name + ".sock";
 
@@ -117,7 +117,7 @@ namespace wirebit {
         ::close(sock_fd);
         ::unlink(sock_path.c_str());
 
-        echo::info("Eventfds created and sent: A→B=", efd_a2b, ", B→A=", efd_b2a).green();
+        echo::trace("Eventfds created and sent: A→B=", efd_a2b, ", B→A=", efd_b2a).green();
 
         return Result<EventfdPair, Error>::ok(EventfdPair{efd_a2b, efd_b2a});
     }
@@ -126,7 +126,7 @@ namespace wirebit {
     /// @param name Link name (used for socket path)
     /// @return Result containing EventfdPair or error
     inline Result<EventfdPair, Error> receive_eventfds(const String &name) {
-        echo::info("Receiving eventfds for: ", name.c_str());
+        echo::trace("Receiving eventfds for: ", name.c_str());
 
         String sock_path = "/tmp/wirebit_" + name + ".sock";
 
@@ -181,7 +181,7 @@ namespace wirebit {
 
         ::close(sock_fd);
 
-        echo::info("Eventfds received: A→B=", fds[0], ", B→A=", fds[1]).green();
+        echo::trace("Eventfds received: A→B=", fds[0], ", B→A=", fds[1]).green();
 
         return Result<EventfdPair, Error>::ok(EventfdPair{fds[0], fds[1]});
     }

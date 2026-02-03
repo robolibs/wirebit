@@ -29,8 +29,8 @@ namespace wirebit {
         /// @param endpoint_id Unique endpoint identifier
         inline SerialEndpoint(std::shared_ptr<Link> link, const SerialConfig &config, uint32_t endpoint_id)
             : link_(link), config_(config), endpoint_id_(endpoint_id) {
-            echo::info("SerialEndpoint created: id=", endpoint_id_, " baud=", config_.baud,
-                       " data=", (int)config_.data_bits, " stop=", (int)config_.stop_bits, " parity=", config_.parity);
+            echo::trace("SerialEndpoint created: id=", endpoint_id_, " baud=", config_.baud,
+                        " data=", (int)config_.data_bits, " stop=", (int)config_.stop_bits, " parity=", config_.parity);
         }
 
         /// Send data through the serial endpoint
@@ -43,7 +43,7 @@ namespace wirebit {
                 return Result<Unit, Error>::ok(Unit{});
             }
 
-            echo::info("Serial send: ", data.size(), " bytes at ", config_.baud, " baud");
+            echo::trace("Serial send: ", data.size(), " bytes at ", config_.baud, " baud");
 
             // Calculate byte transmission time based on baud rate
             uint32_t bits_per_byte = 1 + config_.data_bits + config_.stop_bits; // Start + data + stop
@@ -81,7 +81,7 @@ namespace wirebit {
                 }
             }
 
-            echo::info("Serial send complete: ", data.size(), " bytes");
+            echo::trace("Serial send complete: ", data.size(), " bytes");
             return Result<Unit, Error>::ok(Unit{});
         }
 

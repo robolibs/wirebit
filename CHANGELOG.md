@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.14] - 2026-02-03
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- Update CMakeLists and logging verbosity
+
 ## [0.0.13] - 2026-02-03
 
 ### <!-- 0 -->⛰️  Features

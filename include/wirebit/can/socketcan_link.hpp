@@ -67,7 +67,7 @@ namespace wirebit {
         /// @param config SocketCAN configuration
         /// @return Result containing SocketCanLink or error
         static inline Result<SocketCanLink, Error> create(const SocketCanConfig &config = {}) {
-            echo::info("Creating SocketCanLink for interface: ", config.interface_name.c_str());
+            echo::trace("Creating SocketCanLink for interface: ", config.interface_name.c_str());
 
             // Check if interface exists
             bool interface_exists = check_interface_exists(config.interface_name);
@@ -127,7 +127,7 @@ namespace wirebit {
                 return Result<SocketCanLink, Error>::err(Error::io_error("Failed to set non-blocking mode"));
             }
 
-            echo::info("SocketCanLink created: interface=", config.interface_name.c_str(), " fd=", sock_fd).green();
+            echo::trace("SocketCanLink created: interface=", config.interface_name.c_str(), " fd=", sock_fd).green();
 
             return Result<SocketCanLink, Error>::ok(SocketCanLink(sock_fd, config, !interface_exists));
         }
@@ -148,7 +148,7 @@ namespace wirebit {
             }
 
             if (config_.destroy_on_close && we_created_interface_) {
-                echo::info("Destroying CAN interface: ", config_.interface_name.c_str());
+                echo::trace("Destroying CAN interface: ", config_.interface_name.c_str());
                 destroy_vcan_interface(config_.interface_name);
             }
         }
@@ -338,7 +338,7 @@ namespace wirebit {
         /// @param iface_name Interface name to create
         /// @return Result indicating success or error
         static inline Result<Unit, Error> create_vcan_interface(const String &iface_name) {
-            echo::info("Creating virtual CAN interface: ", iface_name.c_str());
+            echo::trace("Creating virtual CAN interface: ", iface_name.c_str());
 
             // Load vcan module (ignore if already loaded)
             int ret = system("sudo modprobe vcan 2>/dev/null");
@@ -367,14 +367,14 @@ namespace wirebit {
                 return Result<Unit, Error>::err(Error::io_error("Failed to create CAN interface"));
             }
 
-            echo::info("Virtual CAN interface ", iface_name.c_str(), " created and up").green();
+            echo::trace("Virtual CAN interface ", iface_name.c_str(), " created and up").green();
             return Result<Unit, Error>::ok(Unit{});
         }
 
         /// Destroy a virtual CAN interface
         /// @param iface_name Interface name to destroy
         static inline void destroy_vcan_interface(const String &iface_name) {
-            echo::info("Destroying virtual CAN interface: ", iface_name.c_str());
+            echo::trace("Destroying virtual CAN interface: ", iface_name.c_str());
             char cmd[256];
             snprintf(cmd, sizeof(cmd), "sudo ip link delete %s 2>/dev/null", iface_name.c_str());
             int ret = system(cmd);

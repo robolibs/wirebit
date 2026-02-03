@@ -43,7 +43,7 @@ namespace wirebit {
         /// @return Result containing ShmLink or error
         static Result<ShmLink, Error> create(const String &name, size_t capacity_bytes,
                                              const LinkModel *model = nullptr) {
-            echo::info("Creating ShmLink: ", name, " (capacity: ", capacity_bytes, " bytes)");
+            echo::trace("Creating ShmLink: ", name, " (capacity: ", capacity_bytes, " bytes)");
 
             char buf[256];
             snprintf(buf, sizeof(buf), "/%s_tx", name.c_str());
@@ -80,7 +80,7 @@ namespace wirebit {
         /// @param model Optional link model for simulation (nullptr = no simulation)
         /// @return Result containing ShmLink or error
         static Result<ShmLink, Error> attach(const String &name, const LinkModel *model = nullptr) {
-            echo::info("Attaching to ShmLink: ", name);
+            echo::trace("Attaching to ShmLink: ", name);
 
             // Note: TX/RX are swapped for client (client's TX is server's RX)
             char buf[256];
@@ -217,13 +217,13 @@ namespace wirebit {
             has_model_ = true;
             rng_.seed(model.seed);
             next_send_time_ = 0;
-            echo::info("Link model enabled for: ", name_);
+            echo::trace("Link model enabled for: ", name_);
         }
 
         /// Clear link model (disable simulation)
         inline void clear_model() {
             has_model_ = false;
-            echo::info("Link model disabled for: ", name_);
+            echo::trace("Link model disabled for: ", name_);
         }
 
         /// Check if link has model enabled
