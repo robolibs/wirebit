@@ -65,7 +65,7 @@ namespace wirebit {
         /// @param endpoint_id Unique endpoint identifier
         inline CanEndpoint(std::shared_ptr<Link> link, const CanConfig &config, uint32_t endpoint_id)
             : link_(link), config_(config), endpoint_id_(endpoint_id) {
-            echo::info("CanEndpoint created: id=", endpoint_id_, " bitrate=", config_.bitrate, " bps");
+            echo::trace("CanEndpoint created: id=", endpoint_id_, " bitrate=", config_.bitrate, " bps");
         }
 
         /// Send a CAN frame
@@ -79,8 +79,8 @@ namespace wirebit {
             }
 
             // Log CAN frame details
-            echo::info("CAN send: ID=0x", std::hex, std::setfill('0'), std::setw(cf.can_id & CAN_EFF_FLAG ? 8 : 3),
-                       (cf.can_id & CAN_EFF_MASK), std::dec, " DLC=", (int)cf.can_dlc);
+            echo::trace("CAN send: ID=0x", std::hex, std::setfill('0'), std::setw(cf.can_id & CAN_EFF_FLAG ? 8 : 3),
+                        (cf.can_id & CAN_EFF_MASK), std::dec, " DLC=", (int)cf.can_dlc);
 
             // Log data bytes
             if (cf.can_dlc > 0) {

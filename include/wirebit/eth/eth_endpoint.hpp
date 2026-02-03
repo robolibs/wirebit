@@ -187,8 +187,8 @@ namespace wirebit {
         inline EthEndpoint(std::shared_ptr<Link> link, const EthConfig &config, uint32_t endpoint_id,
                            const MacAddr &mac_addr)
             : link_(link), config_(config), endpoint_id_(endpoint_id), mac_addr_(mac_addr) {
-            echo::info("EthEndpoint created: id=", endpoint_id_, " MAC=", mac_to_string(mac_addr_).c_str(),
-                       " bandwidth=", config_.bandwidth_bps / 1000000, " Mbps");
+            echo::trace("EthEndpoint created: id=", endpoint_id_, " MAC=", mac_to_string(mac_addr_).c_str(),
+                        " bandwidth=", config_.bandwidth_bps / 1000000, " Mbps");
         }
 
         /// Send an Ethernet frame
@@ -215,9 +215,9 @@ namespace wirebit {
                 return Result<Unit, Error>::err(parse_result.error());
             }
 
-            echo::info("Ethernet send: ", eth_frame.size(), " bytes, dst=", mac_to_string(dst_mac).c_str(),
-                       " src=", mac_to_string(src_mac).c_str(), " type=0x", std::hex, std::setfill('0'), std::setw(4),
-                       ethertype, std::dec);
+            echo::trace("Ethernet send: ", eth_frame.size(), " bytes, dst=", mac_to_string(dst_mac).c_str(),
+                        " src=", mac_to_string(src_mac).c_str(), " type=0x", std::hex, std::setfill('0'), std::setw(4),
+                        ethertype, std::dec);
 
             // Log payload details
             if (payload.size() > 0) {
@@ -295,9 +295,9 @@ namespace wirebit {
                 Bytes payload;
                 parse_eth_frame(frame, dst_mac, src_mac, ethertype, payload);
 
-                echo::info("Ethernet recv: ", frame.size(), " bytes, dst=", mac_to_string(dst_mac).c_str(),
-                           " src=", mac_to_string(src_mac).c_str(), " type=0x", std::hex, std::setfill('0'),
-                           std::setw(4), ethertype, std::dec);
+                echo::trace("Ethernet recv: ", frame.size(), " bytes, dst=", mac_to_string(dst_mac).c_str(),
+                            " src=", mac_to_string(src_mac).c_str(), " type=0x", std::hex, std::setfill('0'),
+                            std::setw(4), ethertype, std::dec);
 
                 return Result<Bytes, Error>::ok(frame);
             }

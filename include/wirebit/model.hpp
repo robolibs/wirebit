@@ -63,8 +63,8 @@ namespace wirebit {
                   uint64_t bandwidth = 0, uint64_t prng_seed = 0)
             : base_latency_ns(latency), jitter_ns(jitter), drop_prob(drop), dup_prob(dup), corrupt_prob(corrupt),
               bandwidth_bps(bandwidth), seed(prng_seed) {
-            echo::info("LinkModel created: latency=", latency, "ns jitter=", jitter, "ns drop=", drop, " dup=", dup,
-                       " corrupt=", corrupt, " bw=", bandwidth, "bps");
+            echo::trace("LinkModel created: latency=", latency, "ns jitter=", jitter, "ns drop=", drop, " dup=", dup,
+                        " corrupt=", corrupt, " bw=", bandwidth, "bps");
         }
 
         /// Check if model is deterministic (no randomness)
