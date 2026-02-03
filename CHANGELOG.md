@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.13] - 2026-02-03
+
+### <!-- 0 -->⛰️  Features
+
+- Add raw byte mode to PtyLink for serial passthrough
+
 ## [0.0.12] - 2026-01-25
 
 ### <!-- 0 -->⛰️  Features
